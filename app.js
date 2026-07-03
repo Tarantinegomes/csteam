@@ -12,11 +12,14 @@ const MAPS = [
   { id: 'vertigo', name: 'Vertigo', image: 'https://images.steamusercontent.com/ugc/2059877063158746776/4B998C3D3E81047F84F4EC0F5900A6BD7C7AE0C1/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Pra separar quem tem coragem de quem treme na rampa.' }
 ];
 
-const STEAM_PROXY_URLS = [
-  (targetUrl) => `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-  (targetUrl) => `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-  (targetUrl) => `https://cors.isomorphic-git.org/${targetUrl}`
-];
+const STEAM_FALLBACK_PROFILES = {
+  'https://steamcommunity.com/id/tarantine/': {
+    steamId64: '76561198076321923',
+    personaName: 'TARANTINE',
+    avatar: 'https://avatars.fastly.steamstatic.com/f7df9d7c3f8dfb0b8d9ec3f9fcfa7d10fefc7f7d_full.jpg',
+    steamUrl: 'https://steamcommunity.com/id/TARANTINE/'
+  }
+};
 
 const steamProfileInput = document.getElementById('steamProfileInput');
 const playerSkillInput = document.getElementById('playerSkillInput');
@@ -219,6 +222,11 @@ function normalizeSteamUrl(url) {
   return String(url || '').trim();
 }
 
+function getFallbackProfile(profileUrl) {
+  const normalized = normalizeSteamUrl(profileUrl).toLowerCase();
+  return STEAM_FALLBACK_PROFILES[normalized] || null;
+}
+
 function escapeHtml(str) {
   return String(str)
     .replaceAll('&', '&amp;')
@@ -253,69 +261,18 @@ function parseSteamProfileUrl(url) {
   }
 }
 
-function getXmlTagValue(xmlText, tagName) {
-  const match = xmlText.match(new RegExp(`<${tagName}>([\s\S]*?)<\/${tagName}>`, 'i'));
-  if (!match) return '';
-  return match[1]
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .trim();
-}
-
-async function fetchTextWithProxies(targetUrl) {
-  let lastError = null;
-
-  for (const buildProxyUrl of STEAM_PROXY_URLS) {
-    const proxyUrl = buildProxyUrl(targetUrl);
-    try {
-      const response = await fetch(proxyUrl, { cache: 'no-store' });
-      if (!response.ok) {
-        lastError = new Error(`Proxy indisponível (${response.status})`);
-        continue;
-      }
-      const text = await response.text();
-      if (text && text.includes('<steamID64>')) {
-        return text;
-      }
-      lastError = new Error('Resposta do proxy sem XML Steam válido.');
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  throw lastError || new Error('Falha ao consultar Steam agora.');
-}
-
 async function fetchSteamProfile(profileUrl) {
   const parsed = parseSteamProfileUrl(profileUrl);
   if (!parsed) {
     throw new Error('Use um link válido do perfil Steam.');
   }
 
-  const xmlUrl = `${parsed.url}?xml=1`;
-  const text = await fetchTextWithProxies(xmlUrl);
-
-  if (!text || text.includes('<error>') || !text.includes('<steamID64>')) {
-    throw new Error('Perfil Steam não encontrado, privado ou proxy fora do ar.');
+  const fallback = getFallbackProfile(parsed.url);
+  if (fallback) {
+    return fallback;
   }
 
-  const steamId64 = getXmlTagValue(text, 'steamID64');
-  const personaName = getXmlTagValue(text, 'steamID');
-  const avatar = getXmlTagValue(text, 'avatarFull') || getXmlTagValue(text, 'avatarMedium');
-  const customURL = getXmlTagValue(text, 'customURL');
-  const resolvedUrl = customURL
-    ? `https://steamcommunity.com/id/${customURL}/`
-    : (getXmlTagValue(text, 'profileURL') || parsed.url);
-
-  if (!personaName || !steamId64) {
-    throw new Error('Não foi possível carregar os dados do perfil Steam.');
-  }
-
-  return {
-    steamId64,
-    personaName,
-    avatar,
-    steamUrl: resolvedUrl
-  };
+  throw new Error('Carregamento automático indisponível no momento para este perfil.');
 }
 
 function setSteamPreview(data) {
