@@ -23,7 +23,7 @@
         <div class="brand-mark logo-mark"><img src="logo.png" alt="CS dos Campeões" class="brand-logo-image"></div>
         <div class="brand-texts">
           <strong class="brand-title">CS dos Campeões</strong>
-          <span class="brand-subtitle">Cadastro rápido por perfil Steam</span>
+          <span class="brand-subtitle">Monte lobby, sorteie times e acompanhe o rank.</span>
         </div>
       </div>
       <div class="top-nav-actions compact-nav-actions">
@@ -32,10 +32,9 @@
     </header>
 
     <section class="register-hero glass compact-register-hero">
-      <div class="register-hero-copy">
-        <span class="hero-badge">Entrou, colou o link, cadastrou.</span>
-        <h1>Cadastre seu perfil da Steam</h1>
-        <p>Cole o link do seu perfil Steam para puxar automaticamente sua foto e seu nome público.</p>
+      <div class="register-hero-copy simple-hero-copy">
+        <h1>CS dos Campeões</h1>
+        <p>Cadastro rápido para montar lobbies e entrar no sistema de pontuação.</p>
       </div>
 
       <div class="register-card glass-lite" id="cadastro">
@@ -45,13 +44,12 @@
             <input id="steamProfileInput" type="url" placeholder="https://steamcommunity.com/id/seuusuario/" autocomplete="url" />
           </div>
           <div class="steam-input-stack steam-skill-stack">
-            <label for="playerSkillInput">Rating do CS</label>
+            <label for="playerSkillInput">CSficação</label>
             <input id="playerSkillInput" type="number" min="0" step="1" placeholder="Ex: 12000" />
           </div>
           <button id="addPlayerBtn" class="primary-cta primary-register-btn">Cadastrar</button>
         </div>
-        <p class="register-help">Use seu perfil público da Steam. O nome e a foto serão carregados automaticamente.</p>
-        <div class="steam-preview hidden" id="steamPreview">
+        <div class="steam-preview hidden compact-steam-preview" id="steamPreview">
           <img id="steamPreviewAvatar" class="steam-preview-avatar" alt="Avatar Steam" src="" />
           <div class="steam-preview-info">
             <strong id="steamPreviewName">Perfil encontrado</strong>
@@ -66,7 +64,7 @@
         <div class="panel-header compact-panel-header">
           <div>
             <h2>Jogadores cadastrados</h2>
-            <p class="panel-text">Clique para adicionar no lobby.</p>
+            <p class="panel-text">Esses jogadores entram no lobby e no rank.</p>
           </div>
           <span class="small-pill" id="databaseCount">0 cadastrados</span>
         </div>

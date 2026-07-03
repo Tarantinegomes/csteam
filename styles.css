@@ -164,14 +164,14 @@ body {
 .register-hero {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 18px;
-  padding: 24px;
+  gap: 14px;
+  padding: 20px 24px;
   border-radius: 28px;
 }
 
 .register-hero-copy h1 {
-  margin: 10px 0 8px;
-  font-size: clamp(2rem, 5vw, 3rem);
+  margin: 0 0 6px;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
   line-height: 1;
 }
 
@@ -179,19 +179,12 @@ body {
   margin: 0;
   color: #d8e2ee;
   max-width: 760px;
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
-.hero-badge {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(244,161,51,.16);
-  color: #ffe0b6;
-  border: 1px solid rgba(244,161,51,.22);
-  font-weight: 800;
-  font-size: .9rem;
+.simple-hero-copy {
+  display: grid;
+  gap: 6px;
 }
 
 .register-card {
@@ -244,19 +237,11 @@ textarea { resize: vertical; min-height: 140px; }
   min-height: 52px;
 }
 
-.register-help,
 .panel-text,
 .map-description,
-.small-muted,
 .rank-meta,
-.history-date,
 .balance-box span {
   color: var(--muted);
-}
-
-.register-help {
-  margin: 12px 0 0;
-  font-size: .92rem;
 }
 
 .steam-preview {
@@ -268,6 +253,10 @@ textarea { resize: vertical; min-height: 140px; }
   border-radius: 16px;
   background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.06);
+}
+
+.compact-steam-preview {
+  padding: 10px 12px;
 }
 
 .hidden { display: none !important; }
@@ -293,7 +282,7 @@ textarea { resize: vertical; min-height: 140px; }
 .steam-preview-info span {
   color: var(--muted);
   font-size: .88rem;
-  word-break: break-all;
+  display: none;
 }
 
 .compact-main-grid,
