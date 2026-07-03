@@ -16,7 +16,7 @@ const STEAM_FALLBACK_PROFILES = {
   'https://steamcommunity.com/id/tarantine/': {
     steamId64: '76561198076321923',
     personaName: 'TARANTINE',
-    avatar: 'https://avatars.fastly.steamstatic.com/f7df9d7c3f8dfb0b8d9ec3f9fcfa7d10fefc7f7d_full.jpg',
+    avatar: 'https://avatars.cloudflare.steamstatic.com/2ed4d1f2a8e81b7d7d0f7f59c8e0bfe4f4f2e862_full.jpg',
     steamUrl: 'https://steamcommunity.com/id/TARANTINE/'
   }
 };
