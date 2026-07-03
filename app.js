@@ -1,7 +1,6 @@
 const STORAGE_KEY = 'cs-dos-campeoes-local-data-v6';
 const LEGACY_STORAGE_KEYS = ['cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
 const MATCH_POINTS = 500;
-const STEAM_RESOLVE_API = 'https://steamcommunity.com/profiles/0?xml=1';
 
 const MAPS = [
   { id: 'inferno', name: 'Inferno', image: 'https://images.steamusercontent.com/ugc/2506897342782811667/BEA8679BFA4DB3A22C49EEA0D8D7A4D09F0C7E50/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Clássico, caótico, utilitária voando e amigo gritando no Discord.' },
@@ -12,6 +11,8 @@ const MAPS = [
   { id: 'dust2', name: 'Dust II', image: 'https://images.steamusercontent.com/ugc/2059877063158746588/418538AB71CA4A6E6C0466D26B857D3B6B534A31/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'O mapa da honra, do ego e do pixel.' },
   { id: 'vertigo', name: 'Vertigo', image: 'https://images.steamusercontent.com/ugc/2059877063158746776/4B998C3D3E81047F84F4EC0F5900A6BD7C7AE0C1/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Pra separar quem tem coragem de quem treme na rampa.' }
 ];
+
+const STEAM_PROXY_BASE = 'https://api.allorigins.win/raw?url=';
 
 const steamProfileInput = document.getElementById('steamProfileInput');
 const playerSkillInput = document.getElementById('playerSkillInput');
@@ -247,31 +248,39 @@ function parseSteamProfileUrl(url) {
   }
 }
 
+function getXmlTagValue(xmlText, tagName) {
+  const match = xmlText.match(new RegExp(`<${tagName}>([\\s\\S]*?)<\\/${tagName}>`, 'i'));
+  if (!match) return '';
+  return match[1]
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .trim();
+}
+
 async function fetchSteamProfile(profileUrl) {
   const parsed = parseSteamProfileUrl(profileUrl);
   if (!parsed) {
     throw new Error('Use um link válido do perfil Steam.');
   }
 
-  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(parsed.url + '?xml=1')}`;
+  const xmlUrl = `${parsed.url}?xml=1`;
+  const proxyUrl = `${STEAM_PROXY_BASE}${encodeURIComponent(xmlUrl)}`;
   const response = await fetch(proxyUrl);
   if (!response.ok) {
     throw new Error('Não foi possível ler esse perfil Steam agora.');
   }
 
   const text = await response.text();
-  const xml = new DOMParser().parseFromString(text, 'text/xml');
-  const errorNode = xml.querySelector('error');
-  if (errorNode) {
+  if (!text || text.includes('<error>')) {
     throw new Error('Perfil Steam não encontrado ou privado.');
   }
 
-  const steamId64 = xml.querySelector('steamID64')?.textContent?.trim() || '';
-  const personaName = xml.querySelector('steamID')?.textContent?.trim() || '';
-  const avatar = xml.querySelector('avatarFull')?.textContent?.trim() || xml.querySelector('avatarMedium')?.textContent?.trim() || '';
-  const profileUrlResolved = xml.querySelector('customURL')?.textContent?.trim()
-    ? `https://steamcommunity.com/id/${xml.querySelector('customURL').textContent.trim()}/`
-    : (xml.querySelector('profileURL')?.textContent?.trim() || parsed.url);
+  const steamId64 = getXmlTagValue(text, 'steamID64');
+  const personaName = getXmlTagValue(text, 'steamID');
+  const avatar = getXmlTagValue(text, 'avatarFull') || getXmlTagValue(text, 'avatarMedium');
+  const customURL = getXmlTagValue(text, 'customURL');
+  const resolvedUrl = customURL
+    ? `https://steamcommunity.com/id/${customURL}/`
+    : (getXmlTagValue(text, 'profileURL') || parsed.url);
 
   if (!personaName) {
     throw new Error('Não foi possível carregar o nome do perfil Steam.');
@@ -281,7 +290,7 @@ async function fetchSteamProfile(profileUrl) {
     steamId64,
     personaName,
     avatar,
-    steamUrl: profileUrlResolved
+    steamUrl: resolvedUrl
   };
 }
 
@@ -803,14 +812,14 @@ async function handleAddPlayer() {
   addPlayerBtn.textContent = 'Carregando...';
 
   try {
-    const profile = steamPreviewData?.steamUrl === normalizeSteamUrl(steamUrl)
+    const profile = steamPreviewData && steamPreviewData.inputUrl === normalizeSteamUrl(steamUrl)
       ? steamPreviewData
       : await fetchSteamProfile(steamUrl);
 
     const result = addPlayerToDatabase(profile, skill);
     renderDatabasePlayers();
     renderRanking();
-    setSteamPreview(profile);
+    setSteamPreview({ ...profile, inputUrl: normalizeSteamUrl(steamUrl) });
     steamProfileInput.value = profile.steamUrl;
     playerSkillInput.value = '';
 
