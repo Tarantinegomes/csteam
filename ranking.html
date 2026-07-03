@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ranking dos Campeões</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-overlay"></div>
+  <div class="app-shell rank-page-shell">
+    <header class="hero-card glass rank-hero-only">
+      <div class="hero-copy">
+        <p class="eyebrow">CS DOS CAMPEÕES</p>
+        <h1><span>Ranking</span> exclusivo dos lendas</h1>
+        <p class="subcopy">Tela limpa só para acompanhar quem está carregando o servidor nas costas.</p>
+      </div>
+      <div class="hero-badge">
+        <div class="badge-ring"></div>
+        <div class="badge-core">TOP</div>
+      </div>
+    </header>
+
+    <section class="panel glass rank-only-panel">
+      <div class="panel-header">
+        <h2>Ranking Geral</h2>
+        <div class="rank-page-actions">
+          <span class="small-pill" id="rankSyncStatus">Sincronizando...</span>
+          <a class="ghost-btn compact-btn rank-link-btn" href="index.html">Voltar ao painel</a>
+        </div>
+      </div>
+      <ul id="rankingList" class="ranking-list"></ul>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = ['cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
+    const rankingList = document.getElementById('rankingList');
+    const rankSyncStatus = document.getElementById('rankSyncStatus');
+
+    function loadState() {
+      for (const key of STORAGE_KEYS) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key));
+          const hasData = parsed && (parsed.playersDatabase?.length || parsed.history?.length || Object.keys(parsed.ranking || {}).length);
+          if (hasData) {
+            return parsed;
+          }
+        } catch {}
+      }
+      return { ranking: {} };
+    }
+
+    function getTierLabel(points) {
+      if (points >= 5000) return 'Global Elite';
+      if (points >= 3500) return 'Supremo';
+      if (points >= 2500) return 'Águia Lendária';
+      if (points >= 1500) return 'AK Brabíssimo';
+      if (points >= 500) return 'Guardião Mestre';
+      if (points >= 0) return 'Gold Nova';
+      if (points >= -1500) return 'Prata Chorão';
+      return 'Base do MM';
+    }
+
+    function formatPoints(points) {
+      const sign = points > 0 ? '+' : '';
+      return `${sign}${points}`;
+    }
+
+    function normalizeSkill(skill) {
+      const parsed = Number(skill);
+      if (!Number.isFinite(parsed) || parsed < 0) return 0;
+      return Math.round(parsed);
+    }
+
+    function formatSkill(skill) {
+      return `${normalizeSkill(skill).toLocaleString('pt-BR')} CS2`;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function getPlayerSkillMap(playersDatabase) {
+      const map = {};
+      (playersDatabase || []).forEach((entry) => {
+        if (typeof entry === 'string') {
+          map[entry] = 0;
+          return;
+        }
+        if (entry?.name) {
+          map[entry.name] = normalizeSkill(entry.skill);
+        }
+      });
+      return map;
+    }
+
+    function renderRanking() {
+      const state = loadState();
+      const skillMap = getPlayerSkillMap(state.playersDatabase);
+      const entries = Object.entries(state.ranking || {})
+        .sort((a, b) => {
+          if (b[1].points !== a[1].points) return b[1].points - a[1].points;
+          if (b[1].wins !== a[1].wins) return b[1].wins - a[1].wins;
+          return a[0].localeCompare(b[0]);
+        });
+
+      if (!entries.length) {
+        rankingList.innerHTML = '<li class="empty-state">Ainda não existe ranking salvo.</li>';
+        rankSyncStatus.textContent = 'Sem dados';
+        return;
+      }
+
+      rankingList.innerHTML = '';
+      entries.forEach(([name, data], index) => {
+        const pointsClass = data.points >= 0 ? 'rank-points positive' : 'rank-points negative';
+        const item = document.createElement('li');
+        item.className = 'ranking-item ranking-item-large';
+        item.innerHTML = `
+          <div class="rank-emblem"><span>#${index + 1}</span></div>
+          <div>
+            <div class="rank-name">${escapeHtml(name)}</div>
+            <div class="rank-meta">${data.wins}V • ${data.losses}D • ${data.matches} partidas • ${formatSkill(skillMap[name] || 0)}</div>
+          </div>
+          <div class="rank-right">
+            <div class="${pointsClass}">${formatPoints(data.points)}</div>
+            <div class="rank-tier">${getTierLabel(data.points)}</div>
+          </div>
+        `;
+        rankingList.appendChild(item);
+      });
+
+      rankSyncStatus.textContent = `Atualizado ${new Date().toLocaleTimeString('pt-BR')}`;
+    }
+
+    renderRanking();
+    window.addEventListener('storage', renderRanking);
+    setInterval(renderRanking, 1500);
+  </script>
+</body>
+</html>

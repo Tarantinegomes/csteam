@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS dos Campeões</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-overlay"></div>
+  <div class="app-shell">
+    <header class="hero-card glass">
+      <div class="hero-copy">
+        <p class="eyebrow hero-brand">CS DOS CAMPEÕES</p>
+        <h1><span class="hero-main-title">CS dos Campeões</span><small class="hero-subtitle">o cantinho oficial da resenha competitiva</small></h1>
+        <p class="subcopy">Agora com base permanente de jogadores, montagem de lobby automática, balanceamento por rating do CS2, próximo mapa e animação de sorteio do mapa.</p>
+        <div class="hero-links-row">
+          <a href="ranking.html" class="ghost-btn rank-link-btn">Abrir Página do Ranking</a>
+        </div>
+      </div>
+      <div class="hero-badge">
+        <div class="badge-ring"></div>
+        <div class="badge-core">GG EZ</div>
+      </div>
+    </header>
+
+    <section class="map-banner glass" id="mapBanner">
+      <div class="map-banner-image" id="mapBannerImage"></div>
+      <div class="map-banner-content">
+        <p class="eyebrow">MAPA DA VEZ</p>
+        <div class="map-banner-topline">
+          <h2 id="mapNameDisplay">Inferno</h2>
+          <span class="map-chip">Mapa Selecionado</span>
+        </div>
+        <p id="mapDescription" class="map-description">Clássico, caótico, utilitária voando, banana pegando fogo e amigo gritando no Discord.</p>
+
+        <div class="map-actions-row">
+          <button id="nextMapBtn" class="ghost-btn">Próximo Mapa</button>
+          <button id="randomMapBtn" class="ghost-btn">Sortear Mapa</button>
+        </div>
+
+        <div class="map-roulette hidden" id="mapRoulette">
+          <div class="map-roulette-label">Sorteando mapa...</div>
+          <div class="map-roulette-name" id="mapRouletteName">Inferno</div>
+        </div>
+      </div>
+    </section>
+
+    <main class="grid three-col-grid">
+      <section class="panel glass player-db-panel animated-panel">
+        <div class="panel-header">
+          <h2>Base de Jogadores</h2>
+          <span class="small-pill" id="databaseCount">0 cadastrados</span>
+        </div>
+        <p class="panel-text">Cadastre o nome e o rating original do CS2. O sorteio agora usa esse rating para tentar balancear a média dos times.</p>
+
+        <div class="quick-add-grid">
+          <input id="playerInput" type="text" maxlength="24" placeholder="Nome do jogador" />
+          <input id="playerSkillInput" type="number" min="0" step="1" placeholder="Pontos CS2 ex: 12000" />
+          <button id="addPlayerBtn" class="secondary-btn">Salvar</button>
+        </div>
+
+        <div class="name-list-wrap compact-wrap">
+          <ul id="databasePlayerList" class="name-list"></ul>
+        </div>
+      </section>
+
+      <section class="panel glass input-panel animated-panel">
+        <div class="panel-header">
+          <h2>Lobby Atual</h2>
+          <span id="playerCount">0 / 10</span>
+        </div>
+        <p class="panel-text">Monte o lobby clicando nos cadastrados ou use o modo automático para completar os 10 de uma vez.</p>
+
+        <div class="actions-row stacked-mobile">
+          <button id="autoAssembleBtn" class="ghost-btn">Auto Montar 10</button>
+          <button id="clearBtn" class="ghost-btn">Limpar Lobby</button>
+        </div>
+
+        <div class="name-list-wrap">
+          <ul id="playerList" class="name-list"></ul>
+        </div>
+      </section>
+
+      <section class="panel glass arena-panel animated-panel">
+        <div class="panel-header">
+          <h2>Controle da Partida</h2>
+          <span class="status-pill" id="statusPill">Aguardando</span>
+        </div>
+
+        <div class="map-select-wrap">
+          <label for="mapSelect">Mapa</label>
+          <select id="mapSelect"></select>
+        </div>
+
+        <div class="balance-strip" id="balanceStrip">
+          <div class="balance-box ct-balance">
+            <span>CT Média</span>
+            <strong id="ctAverageDisplay">0</strong>
+          </div>
+          <div class="balance-box diff-balance">
+            <span>Diferença</span>
+            <strong id="balanceDiffDisplay">0</strong>
+          </div>
+          <div class="balance-box t-balance">
+            <span>TR Média</span>
+            <strong id="tAverageDisplay">0</strong>
+          </div>
+        </div>
+
+        <div class="animation-stage" id="animationStage">
+          <div class="scanline"></div>
+          <div class="spinner-core"></div>
+          <div id="rouletteNames" class="roulette-names">PRONTO</div>
+          <div class="stage-glow"></div>
+        </div>
+
+        <div class="primary-actions-grid">
+          <button id="shuffleBtn" class="shuffle-btn">
+            <span class="btn-glow"></span>
+            <span class="btn-label">Sortear Times Balanceados</span>
+          </button>
+
+          <button id="rerollBtn" class="control-btn">Sortear Novamente</button>
+        </div>
+
+        <div class="primary-actions-grid secondary-controls-row">
+          <button id="addAfterDrawBtn" class="ghost-btn">Adicionar Depois do Sorteio</button>
+          <button id="startMatchBtn" class="control-btn start-btn">▶ Começar Jogo</button>
+        </div>
+
+        <div class="winner-actions-grid">
+          <button id="ctWinBtn" class="control-btn win-btn ct-win">CT Venceu</button>
+          <button id="tWinBtn" class="control-btn win-btn t-win">TR Venceu</button>
+        </div>
+
+        <div class="match-summary" id="matchSummary">
+          Nenhuma partida ativa. Sorteie os times primeiro e depois comece o jogo.
+        </div>
+      </section>
+    </main>
+
+    <section class="results-grid">
+      <article class="team-card glass team-ct animated-panel">
+        <div class="team-topline">
+          <span class="team-tag ct">Contra-Terroristas</span>
+        </div>
+        <ul id="teamA" class="team-list"></ul>
+      </article>
+
+      <article class="team-card glass team-t animated-panel">
+        <div class="team-topline">
+          <span class="team-tag t">Terroristas</span>
+        </div>
+        <ul id="teamB" class="team-list"></ul>
+      </article>
+    </section>
+
+    <section class="bottom-grid">
+      <article class="panel glass rank-panel animated-panel">
+        <div class="panel-header">
+          <h2>Ranking dos Campeões</h2>
+          <span class="small-pill">Salvo Localmente</span>
+        </div>
+        <ul id="rankingList" class="ranking-list"></ul>
+      </article>
+
+      <article class="panel glass history-panel animated-panel">
+        <div class="panel-header history-header">
+          <h2>Histórico das Peladas Sérias</h2>
+          <button id="resetHistoryBtn" class="ghost-btn compact-btn">Resetar Dados Locais</button>
+        </div>
+        <ul id="historyList" class="history-list"></ul>
+      </article>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="editModal">
+    <div class="modal-card glass">
+      <div class="panel-header">
+        <h2>Editar Registro da Partida</h2>
+        <button id="closeModalBtn" class="ghost-btn compact-btn">Fechar</button>
+      </div>
+
+      <div class="modal-grid">
+        <div>
+          <label for="editMapSelect">Mapa</label>
+          <select id="editMapSelect"></select>
+        </div>
+        <div>
+          <label for="editWinnerSelect">Vencedor</label>
+          <select id="editWinnerSelect">
+            <option value="CT">CT</option>
+            <option value="T">TR</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-grid two-columns-list">
+        <div>
+          <label>Jogadores do CT</label>
+          <textarea id="editCtPlayers" rows="6" placeholder="Um jogador por linha"></textarea>
+        </div>
+        <div>
+          <label>Jogadores do TR</label>
+          <textarea id="editTPlayers" rows="6" placeholder="Um jogador por linha"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="saveEditBtn" class="secondary-btn">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Debug Storage</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #1b1b1b; padding: 16px; border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Debug LocalStorage</h1>
+  <pre id="out"></pre>
+  <script>
+    const keys = [
+      'cs-dos-campeoes-local-data-v4',
+      'cs-dos-campeoes-local-data-v5'
+    ];
+    const result = {};
+    keys.forEach((key) => {
+      const raw = localStorage.getItem(key);
+      result[key] = raw ? JSON.parse(raw) : null;
+    });
+    document.getElementById('out').textContent = JSON.stringify(result, null, 2);
+  </script>
+</body>
+</html>
