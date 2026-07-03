@@ -369,7 +369,7 @@ textarea { resize: vertical; min-height: 140px; }
 .ranking-item,
 .history-item {
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 16px;
   margin-bottom: 8px;
   background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
   border: 1px solid rgba(255,255,255,.05);
@@ -383,12 +383,17 @@ textarea { resize: vertical; min-height: 140px; }
   gap: 10px;
 }
 
+.db-item {
+  min-height: 72px;
+}
+
 .db-player-main,
 .lobby-player-main {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1;
 }
 
 .db-player-meta {
@@ -401,6 +406,9 @@ textarea { resize: vertical; min-height: 140px; }
 .db-player-meta strong,
 .lobby-player-main strong {
   font-size: .98rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .db-skill {
@@ -410,9 +418,9 @@ textarea { resize: vertical; min-height: 140px; }
 
 .player-avatar,
 .lobby-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   object-fit: cover;
   border: 1px solid rgba(255,255,255,.1);
   flex-shrink: 0;
@@ -421,13 +429,14 @@ textarea { resize: vertical; min-height: 140px; }
 .db-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .small-action,
 .remove-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   font-weight: 900;
   border: none;
   cursor: pointer;
@@ -438,6 +447,12 @@ textarea { resize: vertical; min-height: 140px; }
   color: #f3f6fb;
 }
 
+.small-action.add-db-btn {
+  background: rgba(65,223,155,.16);
+  color: #cffff0;
+}
+
+.small-action.remove-db-btn,
 .remove-btn {
   background: rgba(255,99,125,.14);
   color: #ffd9e0;
@@ -771,4 +786,6 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .shuffle-btn { width: 100%; }
   .ranking-item { grid-template-columns: 50px 1fr; }
   .rank-right { grid-column: 1 / -1; text-align: left; }
+  .name-item,
+  .team-item { align-items: flex-start; }
 }
