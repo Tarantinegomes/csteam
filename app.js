@@ -14,6 +14,7 @@ const MAPS = [
 
 const STEAM_PROXY_URLS = [
   (targetUrl) => `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+  (targetUrl) => `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
   (targetUrl) => `https://cors.isomorphic-git.org/${targetUrl}`
 ];
 
@@ -272,7 +273,10 @@ async function fetchTextWithProxies(targetUrl) {
         continue;
       }
       const text = await response.text();
-      if (text) return text;
+      if (text && text.includes('<steamID64>')) {
+        return text;
+      }
+      lastError = new Error('Resposta do proxy sem XML Steam válido.');
     } catch (error) {
       lastError = error;
     }
