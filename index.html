@@ -6,7 +6,7 @@
   <title>CS dos Campeões</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -15,114 +15,101 @@
       <source src="cs2_header.webm" type="video/webm">
     </video>
     <div class="bg-overlay"></div>
-    <div class="bg-grid-lines"></div>
   </div>
 
-  <div class="app-shell">
-    <header class="top-nav glass">
-      <div class="brand-lockup">
-        <div class="brand-mark logo-mark"><img src="logo.png" alt="CS dos Campeões logo" class="brand-logo-image"></div>
-        <div>
-          <p class="eyebrow hero-brand">SIMZONE PRIVATE HUB</p>
+  <div class="app-shell app-shell-compact">
+    <header class="top-nav glass compact-top-nav">
+      <div class="brand-lockup compact-brand">
+        <div class="brand-mark logo-mark"><img src="logo.png" alt="CS dos Campeões" class="brand-logo-image"></div>
+        <div class="brand-texts">
           <strong class="brand-title">CS dos Campeões</strong>
+          <span class="brand-subtitle">Cadastro rápido por perfil Steam</span>
         </div>
       </div>
-      <div class="top-nav-actions">
+      <div class="top-nav-actions compact-nav-actions">
         <a href="ranking.html" class="nav-link">Ranking</a>
       </div>
     </header>
 
-    <section class="hero-showcase glass">
-      <div class="hero-backdrop-copy">
-        <div class="hero-badge-line">
-          <span class="hero-badge-dot"></span>
-          <span>PRIVATE COMPETITIVE ENVIRONMENT</span>
-        </div>
-        <h1 class="massive-title">CS DOS<br>CAMPEÕES</h1>
-        <p class="hero-lead">Seu hub privado de partidas competitivas com draft balanceado, rotação de mapas, histórico persistente e ranking local compartilhado pelo navegador.</p>
+    <section class="register-hero glass compact-register-hero">
+      <div class="register-hero-copy">
+        <span class="hero-badge">Entrou, colou o link, cadastrou.</span>
+        <h1>Cadastre seu perfil da Steam</h1>
+        <p>Cole o link do seu perfil Steam para puxar automaticamente sua foto e seu nome público.</p>
+      </div>
 
-        <div class="hero-cta-row">
-          <a href="ranking.html" class="primary-cta">Ver Ranking</a>
-          <a href="#control-panel" class="ghost-btn">Abrir Painel</a>
+      <div class="register-card glass-lite" id="cadastro">
+        <div class="steam-register-grid">
+          <div class="steam-input-stack">
+            <label for="steamProfileInput">Link do perfil Steam</label>
+            <input id="steamProfileInput" type="url" placeholder="https://steamcommunity.com/id/seuusuario/" autocomplete="url" />
+          </div>
+          <div class="steam-input-stack steam-skill-stack">
+            <label for="playerSkillInput">Rating do CS</label>
+            <input id="playerSkillInput" type="number" min="0" step="1" placeholder="Ex: 12000" />
+          </div>
+          <button id="addPlayerBtn" class="primary-cta primary-register-btn">Cadastrar</button>
         </div>
-
-        <div class="hero-metrics-row">
-          <div class="metric-block glass-lite">
-            <span class="metric-label">mode</span>
-            <strong>private ladder</strong>
-          </div>
-          <div class="metric-block glass-lite">
-            <span class="metric-label">storage</span>
-            <strong>browser local state</strong>
-          </div>
-          <div class="metric-block glass-lite">
-            <span class="metric-label">format</span>
-            <strong>balanced 5v5 draft</strong>
+        <p class="register-help">Use seu perfil público da Steam. O nome e a foto serão carregados automaticamente.</p>
+        <div class="steam-preview hidden" id="steamPreview">
+          <img id="steamPreviewAvatar" class="steam-preview-avatar" alt="Avatar Steam" src="" />
+          <div class="steam-preview-info">
+            <strong id="steamPreviewName">Perfil encontrado</strong>
+            <span id="steamPreviewUrl"></span>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="hero-overlay-card glass-lite">
-        <div class="overlay-label-row">
-          <span class="hero-chip">PRIVATE ACCESS</span>
-          <span class="overlay-mini-tag">CS2 RANKED HUB</span>
-        </div>
-
-        <div class="overlay-logo-wrap">
-          <div class="hero-side-logo logo-mark large-logo"><img src="logo.png" alt="CS dos Campeões logo" class="hero-logo-image"></div>
+    <main class="compact-main-grid">
+      <section class="panel glass player-db-panel compact-panel">
+        <div class="panel-header compact-panel-header">
           <div>
-            <p class="overlay-kicker">TACTICAL MATCH CONTROL</p>
-            <strong class="overlay-title">Live Draft, Match Result and Rating Flow</strong>
+            <h2>Jogadores cadastrados</h2>
+            <p class="panel-text">Clique para adicionar no lobby.</p>
           </div>
+          <span class="small-pill" id="databaseCount">0 cadastrados</span>
+        </div>
+        <div class="name-list-wrap compact-list-wrap">
+          <ul id="databasePlayerList" class="name-list"></ul>
+        </div>
+      </section>
+
+      <section class="panel glass input-panel compact-panel">
+        <div class="panel-header compact-panel-header">
+          <div>
+            <h2>Lobby atual</h2>
+            <p class="panel-text">Monte os 10 jogadores da partida.</p>
+          </div>
+          <span id="playerCount" class="small-pill">0 / 10</span>
         </div>
 
-        <div class="intel-list">
-          <div class="intel-row">
-            <span class="intel-label">players</span>
-            <strong>base local com rating manual</strong>
-          </div>
-          <div class="intel-row">
-            <span class="intel-label">match ops</span>
-            <strong>ready for instant lobby assembly</strong>
-          </div>
-          <div class="intel-row">
-            <span class="intel-label">history</span>
-            <strong>persistent local archive</strong>
-          </div>
+        <div class="actions-row compact-actions-row">
+          <button id="autoAssembleBtn" class="ghost-btn">Auto montar 10</button>
+          <button id="clearBtn" class="ghost-btn">Limpar lobby</button>
         </div>
-      </div>
-    </section>
 
-    <section class="hero-strip-grid">
-      <article class="strip-card glass-lite tactical-card">
-        <span class="strip-label">Live State</span>
-        <strong>Ranking persistente local</strong>
-      </article>
-      <article class="strip-card glass-lite tactical-card">
-        <span class="strip-label">Players</span>
-        <strong>Cadastro rápido de nick e rating</strong>
-      </article>
-      <article class="strip-card glass-lite tactical-card">
-        <span class="strip-label">Team Balance</span>
-        <strong>Draft balanceado por rating CS</strong>
-      </article>
-    </section>
+        <div class="name-list-wrap compact-list-wrap">
+          <ul id="playerList" class="name-list"></ul>
+        </div>
+      </section>
+    </main>
 
-    <section class="map-banner glass" id="mapBanner">
+    <section class="map-banner glass compact-map-banner" id="mapBanner">
       <div class="map-banner-image" id="mapBannerImage"></div>
-      <div class="map-banner-content">
-        <p class="eyebrow">ACTIVE MAP</p>
-        <div class="map-banner-topline">
-          <h2 id="mapNameDisplay">Inferno</h2>
-          <span class="map-chip">Selected Rotation</span>
+      <div class="map-banner-content compact-map-content">
+        <div class="map-banner-topline compact-map-topline">
+          <div>
+            <p class="eyebrow">Mapa atual</p>
+            <h2 id="mapNameDisplay">Inferno</h2>
+          </div>
+          <span class="map-chip">Rotação ativa</span>
         </div>
-        <p id="mapDescription" class="map-description">Clássico, caótico, utilitária voando, banana pegando fogo e amigo gritando no Discord.</p>
-
+        <p id="mapDescription" class="map-description">Clássico, caótico, utilitária voando e amigo gritando no Discord.</p>
         <div class="map-actions-row">
-          <button id="nextMapBtn" class="ghost-btn">Próximo Mapa</button>
-          <button id="randomMapBtn" class="ghost-btn">Sortear Mapa</button>
+          <button id="nextMapBtn" class="ghost-btn">Próximo mapa</button>
+          <button id="randomMapBtn" class="ghost-btn">Sortear mapa</button>
         </div>
-
         <div class="map-roulette hidden" id="mapRoulette">
           <div class="map-roulette-label">Sorteando mapa...</div>
           <div class="map-roulette-name" id="mapRouletteName">Inferno</div>
@@ -130,56 +117,24 @@
       </div>
     </section>
 
-    <main class="grid three-col-grid" id="control-panel">
-      <section class="panel glass player-db-panel animated-panel section-panel tactical-panel">
-        <div class="panel-header">
-          <h2>Base de Jogadores</h2>
-          <span class="small-pill" id="databaseCount">0 cadastrados</span>
+    <section class="panel glass arena-panel compact-panel compact-arena-panel">
+      <div class="panel-header compact-panel-header">
+        <div>
+          <h2>Partida</h2>
+          <p class="panel-text">Sorteie os times e registre o resultado.</p>
         </div>
-        <p class="panel-text">Cadastre nome e rating manual do CS2 para balancear melhor os times.</p>
+        <span class="status-pill" id="statusPill">Aguardando</span>
+      </div>
 
-        <div class="quick-add-grid">
-          <input id="playerInput" type="text" maxlength="24" placeholder="Nome do jogador" />
-          <input id="playerSkillInput" type="number" min="0" step="1" placeholder="Rating CS manual" />
-          <button id="addPlayerBtn" class="secondary-btn">Salvar</button>
-        </div>
-
-        <div class="name-list-wrap compact-wrap">
-          <ul id="databasePlayerList" class="name-list"></ul>
-        </div>
-      </section>
-
-      <section class="panel glass input-panel animated-panel section-panel tactical-panel">
-        <div class="panel-header">
-          <h2>Lobby Atual</h2>
-          <span id="playerCount">0 / 10</span>
-        </div>
-        <p class="panel-text">Monte o lobby clicando nos cadastrados ou use o modo automático para completar os 10 rapidamente.</p>
-
-        <div class="actions-row stacked-mobile">
-          <button id="autoAssembleBtn" class="ghost-btn">Auto Montar 10</button>
-          <button id="clearBtn" class="ghost-btn">Limpar Lobby</button>
-        </div>
-
-        <div class="name-list-wrap">
-          <ul id="playerList" class="name-list"></ul>
-        </div>
-      </section>
-
-      <section class="panel glass arena-panel animated-panel section-panel tactical-panel arena-highlight">
-        <div class="panel-header">
-          <h2>Controle da Partida</h2>
-          <span class="status-pill" id="statusPill">Aguardando</span>
-        </div>
-
-        <div class="map-select-wrap">
+      <div class="arena-top-controls">
+        <div class="map-select-wrap compact-map-select-wrap">
           <label for="mapSelect">Mapa</label>
           <select id="mapSelect"></select>
         </div>
 
-        <div class="balance-strip" id="balanceStrip">
+        <div class="balance-strip compact-balance-strip" id="balanceStrip">
           <div class="balance-box ct-balance">
-            <span>CT Média</span>
+            <span>CT média</span>
             <strong id="ctAverageDisplay">0</strong>
           </div>
           <div class="balance-box diff-balance">
@@ -187,73 +142,76 @@
             <strong id="balanceDiffDisplay">0</strong>
           </div>
           <div class="balance-box t-balance">
-            <span>TR Média</span>
+            <span>TR média</span>
             <strong id="tAverageDisplay">0</strong>
           </div>
         </div>
+      </div>
 
-        <div class="animation-stage" id="animationStage">
-          <div class="scanline"></div>
-          <div class="spinner-core"></div>
-          <div class="stage-crosshair"></div>
-          <div id="rouletteNames" class="roulette-names">READY</div>
-          <div class="stage-glow"></div>
-        </div>
+      <div class="animation-stage compact-animation-stage" id="animationStage">
+        <div class="scanline"></div>
+        <div class="spinner-core"></div>
+        <div id="rouletteNames" class="roulette-names">PRONTO</div>
+        <div class="stage-glow"></div>
+      </div>
 
-        <div class="primary-actions-grid">
-          <button id="shuffleBtn" class="shuffle-btn">
-            <span class="btn-glow"></span>
-            <span class="btn-label">Sortear Times Balanceados</span>
-          </button>
+      <div class="primary-actions-grid compact-primary-actions">
+        <button id="shuffleBtn" class="shuffle-btn">
+          <span class="btn-glow"></span>
+          <span class="btn-label">Sortear times balanceados</span>
+        </button>
+        <button id="rerollBtn" class="control-btn">Sortear novamente</button>
+      </div>
 
-          <button id="rerollBtn" class="control-btn">Sortear Novamente</button>
-        </div>
+      <div class="primary-actions-grid compact-secondary-actions">
+        <button id="addAfterDrawBtn" class="ghost-btn">Adicionar depois do sorteio</button>
+        <button id="startMatchBtn" class="control-btn start-btn">Começar jogo</button>
+      </div>
 
-        <div class="primary-actions-grid secondary-controls-row">
-          <button id="addAfterDrawBtn" class="ghost-btn">Adicionar Depois do Sorteio</button>
-          <button id="startMatchBtn" class="control-btn start-btn">▶ Começar Jogo</button>
-        </div>
+      <div class="winner-actions-grid compact-winner-actions">
+        <button id="ctWinBtn" class="control-btn win-btn ct-win">CT venceu</button>
+        <button id="tWinBtn" class="control-btn win-btn t-win">TR venceu</button>
+      </div>
 
-        <div class="winner-actions-grid">
-          <button id="ctWinBtn" class="control-btn win-btn ct-win">CT Venceu</button>
-          <button id="tWinBtn" class="control-btn win-btn t-win">TR Venceu</button>
-        </div>
+      <div class="match-summary" id="matchSummary">
+        Nenhuma partida ativa. Sorteie os times primeiro e depois comece o jogo.
+      </div>
+    </section>
 
-        <div class="match-summary" id="matchSummary">
-          Nenhuma partida ativa. Sorteie os times primeiro e depois comece o jogo.
-        </div>
-      </section>
-    </main>
-
-    <section class="results-grid">
-      <article class="team-card glass team-ct animated-panel tactical-panel team-panel-ct">
+    <section class="results-grid compact-results-grid">
+      <article class="team-card glass compact-team-card team-panel-ct">
         <div class="team-topline">
-          <span class="team-tag ct">Counter-Terrorists</span>
+          <span class="team-tag ct">Contra-Terroristas</span>
         </div>
         <ul id="teamA" class="team-list"></ul>
       </article>
 
-      <article class="team-card glass team-t animated-panel tactical-panel team-panel-t">
+      <article class="team-card glass compact-team-card team-panel-t">
         <div class="team-topline">
-          <span class="team-tag t">Terrorists</span>
+          <span class="team-tag t">Terroristas</span>
         </div>
         <ul id="teamB" class="team-list"></ul>
       </article>
     </section>
 
-    <section class="bottom-grid">
-      <article class="panel glass rank-panel animated-panel section-panel tactical-panel">
-        <div class="panel-header">
-          <h2>Ranking dos Campeões</h2>
-          <span class="small-pill">Local Browser Data</span>
+    <section class="bottom-grid compact-bottom-grid">
+      <article class="panel glass rank-panel compact-panel">
+        <div class="panel-header compact-panel-header">
+          <div>
+            <h2>Ranking</h2>
+            <p class="panel-text">Pontuação local da galera.</p>
+          </div>
         </div>
         <ul id="rankingList" class="ranking-list"></ul>
       </article>
 
-      <article class="panel glass history-panel animated-panel section-panel tactical-panel">
-        <div class="panel-header history-header">
-          <h2>Histórico das Peladas Sérias</h2>
-          <button id="resetHistoryBtn" class="ghost-btn compact-btn">Resetar Dados Locais</button>
+      <article class="panel glass history-panel compact-panel">
+        <div class="panel-header history-header compact-panel-header">
+          <div>
+            <h2>Histórico</h2>
+            <p class="panel-text">Partidas registradas.</p>
+          </div>
+          <button id="resetHistoryBtn" class="ghost-btn compact-btn">Resetar dados</button>
         </div>
         <ul id="historyList" class="history-list"></ul>
       </article>
@@ -263,7 +221,7 @@
   <div class="modal-backdrop hidden" id="editModal">
     <div class="modal-card glass">
       <div class="panel-header">
-        <h2>Editar Registro da Partida</h2>
+        <h2>Editar registro da partida</h2>
         <button id="closeModalBtn" class="ghost-btn compact-btn">Fechar</button>
       </div>
 
@@ -293,7 +251,7 @@
       </div>
 
       <div class="modal-actions">
-        <button id="saveEditBtn" class="secondary-btn">Salvar Alterações</button>
+        <button id="saveEditBtn" class="secondary-btn">Salvar alterações</button>
       </div>
     </div>
   </div>
