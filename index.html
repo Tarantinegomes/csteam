@@ -6,34 +6,115 @@
   <title>CS dos Campeões</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="bg-overlay"></div>
+  <div class="cs-video-shell">
+    <video class="cs-bg-video" autoplay muted loop playsinline>
+      <source src="https://cdn.coverr.co/videos/coverr-gamer-typing-on-keyboard-1566871516451?download=1080p" type="video/mp4">
+    </video>
+    <div class="bg-overlay"></div>
+    <div class="bg-grid-lines"></div>
+  </div>
+
   <div class="app-shell">
-    <header class="hero-card glass">
-      <div class="hero-copy">
-        <p class="eyebrow hero-brand">CS DOS CAMPEÕES</p>
-        <h1><span class="hero-main-title">CS dos Campeões</span><small class="hero-subtitle">o cantinho oficial da resenha competitiva</small></h1>
-        <p class="subcopy">Agora com base permanente de jogadores, montagem de lobby automática, balanceamento por rating do CS2, próximo mapa e animação de sorteio do mapa.</p>
-        <div class="hero-links-row">
-          <a href="ranking.html" class="ghost-btn rank-link-btn">Abrir Página do Ranking</a>
+    <header class="top-nav glass">
+      <div class="brand-lockup">
+        <div class="brand-mark logo-mark brand-logo-text">SZ</div>
+        <div>
+          <p class="eyebrow hero-brand">SIMZONE PRIVATE HUB</p>
+          <strong class="brand-title">CS dos Campeões</strong>
         </div>
       </div>
-      <div class="hero-badge">
-        <div class="badge-ring"></div>
-        <div class="badge-core">GG EZ</div>
+      <div class="top-nav-actions">
+        <a href="ranking.html" class="nav-link">Ranking</a>
       </div>
     </header>
+
+    <section class="hero-showcase glass">
+      <div class="hero-backdrop-copy">
+        <div class="hero-badge-line">
+          <span class="hero-badge-dot"></span>
+          <span>PRIVATE COMPETITIVE ENVIRONMENT</span>
+        </div>
+        <h1 class="massive-title">CS DOS<br>CAMPEÕES</h1>
+        <p class="hero-lead">Seu hub privado de partidas competitivas com draft balanceado, rotação de mapas, histórico persistente e ranking local compartilhado pelo navegador.</p>
+
+        <div class="hero-cta-row">
+          <a href="ranking.html" class="primary-cta">Ver Ranking</a>
+          <a href="#control-panel" class="ghost-btn">Abrir Painel</a>
+        </div>
+
+        <div class="hero-metrics-row">
+          <div class="metric-block glass-lite">
+            <span class="metric-label">mode</span>
+            <strong>private ladder</strong>
+          </div>
+          <div class="metric-block glass-lite">
+            <span class="metric-label">storage</span>
+            <strong>browser local state</strong>
+          </div>
+          <div class="metric-block glass-lite">
+            <span class="metric-label">format</span>
+            <strong>balanced 5v5 draft</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-overlay-card glass-lite">
+        <div class="overlay-label-row">
+          <span class="hero-chip">PRIVATE ACCESS</span>
+          <span class="overlay-mini-tag">CS2 RANKED HUB</span>
+        </div>
+
+        <div class="overlay-logo-wrap">
+          <div class="hero-side-logo logo-mark large-logo brand-logo-text">SZ</div>
+          <div>
+            <p class="overlay-kicker">TACTICAL MATCH CONTROL</p>
+            <strong class="overlay-title">Live Draft, Match Result and Rating Flow</strong>
+          </div>
+        </div>
+
+        <div class="intel-list">
+          <div class="intel-row">
+            <span class="intel-label">players</span>
+            <strong>base local com rating manual</strong>
+          </div>
+          <div class="intel-row">
+            <span class="intel-label">match ops</span>
+            <strong>ready for instant lobby assembly</strong>
+          </div>
+          <div class="intel-row">
+            <span class="intel-label">history</span>
+            <strong>persistent local archive</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero-strip-grid">
+      <article class="strip-card glass-lite tactical-card">
+        <span class="strip-label">Live State</span>
+        <strong>Ranking persistente local</strong>
+      </article>
+      <article class="strip-card glass-lite tactical-card">
+        <span class="strip-label">Players</span>
+        <strong>Cadastro rápido de nick e rating</strong>
+      </article>
+      <article class="strip-card glass-lite tactical-card">
+        <span class="strip-label">Team Balance</span>
+        <strong>Draft balanceado por rating CS</strong>
+      </article>
+    </section>
 
     <section class="map-banner glass" id="mapBanner">
       <div class="map-banner-image" id="mapBannerImage"></div>
       <div class="map-banner-content">
-        <p class="eyebrow">MAPA DA VEZ</p>
+        <p class="eyebrow">ACTIVE MAP</p>
         <div class="map-banner-topline">
           <h2 id="mapNameDisplay">Inferno</h2>
-          <span class="map-chip">Mapa Selecionado</span>
+          <span class="map-chip">Selected Rotation</span>
         </div>
         <p id="mapDescription" class="map-description">Clássico, caótico, utilitária voando, banana pegando fogo e amigo gritando no Discord.</p>
 
@@ -49,17 +130,17 @@
       </div>
     </section>
 
-    <main class="grid three-col-grid">
-      <section class="panel glass player-db-panel animated-panel">
+    <main class="grid three-col-grid" id="control-panel">
+      <section class="panel glass player-db-panel animated-panel section-panel tactical-panel">
         <div class="panel-header">
           <h2>Base de Jogadores</h2>
           <span class="small-pill" id="databaseCount">0 cadastrados</span>
         </div>
-        <p class="panel-text">Cadastre o nome e o rating original do CS2. O sorteio agora usa esse rating para tentar balancear a média dos times.</p>
+        <p class="panel-text">Cadastre nome e rating manual do CS2 para balancear melhor os times.</p>
 
         <div class="quick-add-grid">
           <input id="playerInput" type="text" maxlength="24" placeholder="Nome do jogador" />
-          <input id="playerSkillInput" type="number" min="0" step="1" placeholder="Pontos CS2 ex: 12000" />
+          <input id="playerSkillInput" type="number" min="0" step="1" placeholder="Rating CS manual" />
           <button id="addPlayerBtn" class="secondary-btn">Salvar</button>
         </div>
 
@@ -68,12 +149,12 @@
         </div>
       </section>
 
-      <section class="panel glass input-panel animated-panel">
+      <section class="panel glass input-panel animated-panel section-panel tactical-panel">
         <div class="panel-header">
           <h2>Lobby Atual</h2>
           <span id="playerCount">0 / 10</span>
         </div>
-        <p class="panel-text">Monte o lobby clicando nos cadastrados ou use o modo automático para completar os 10 de uma vez.</p>
+        <p class="panel-text">Monte o lobby clicando nos cadastrados ou use o modo automático para completar os 10 rapidamente.</p>
 
         <div class="actions-row stacked-mobile">
           <button id="autoAssembleBtn" class="ghost-btn">Auto Montar 10</button>
@@ -85,7 +166,7 @@
         </div>
       </section>
 
-      <section class="panel glass arena-panel animated-panel">
+      <section class="panel glass arena-panel animated-panel section-panel tactical-panel arena-highlight">
         <div class="panel-header">
           <h2>Controle da Partida</h2>
           <span class="status-pill" id="statusPill">Aguardando</span>
@@ -114,7 +195,8 @@
         <div class="animation-stage" id="animationStage">
           <div class="scanline"></div>
           <div class="spinner-core"></div>
-          <div id="rouletteNames" class="roulette-names">PRONTO</div>
+          <div class="stage-crosshair"></div>
+          <div id="rouletteNames" class="roulette-names">READY</div>
           <div class="stage-glow"></div>
         </div>
 
@@ -144,31 +226,31 @@
     </main>
 
     <section class="results-grid">
-      <article class="team-card glass team-ct animated-panel">
+      <article class="team-card glass team-ct animated-panel tactical-panel team-panel-ct">
         <div class="team-topline">
-          <span class="team-tag ct">Contra-Terroristas</span>
+          <span class="team-tag ct">Counter-Terrorists</span>
         </div>
         <ul id="teamA" class="team-list"></ul>
       </article>
 
-      <article class="team-card glass team-t animated-panel">
+      <article class="team-card glass team-t animated-panel tactical-panel team-panel-t">
         <div class="team-topline">
-          <span class="team-tag t">Terroristas</span>
+          <span class="team-tag t">Terrorists</span>
         </div>
         <ul id="teamB" class="team-list"></ul>
       </article>
     </section>
 
     <section class="bottom-grid">
-      <article class="panel glass rank-panel animated-panel">
+      <article class="panel glass rank-panel animated-panel section-panel tactical-panel">
         <div class="panel-header">
           <h2>Ranking dos Campeões</h2>
-          <span class="small-pill">Salvo Localmente</span>
+          <span class="small-pill">Local Browser Data</span>
         </div>
         <ul id="rankingList" class="ranking-list"></ul>
       </article>
 
-      <article class="panel glass history-panel animated-panel">
+      <article class="panel glass history-panel animated-panel section-panel tactical-panel">
         <div class="panel-header history-header">
           <h2>Histórico das Peladas Sérias</h2>
           <button id="resetHistoryBtn" class="ghost-btn compact-btn">Resetar Dados Locais</button>

@@ -6,11 +6,18 @@
   <title>Ranking dos Campeões</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="bg-overlay"></div>
+  <div class="cs-video-shell">
+    <video class="cs-bg-video" autoplay muted loop playsinline>
+      <source src="https://cdn.coverr.co/videos/coverr-gamer-typing-on-keyboard-1566871516451?download=1080p" type="video/mp4">
+    </video>
+    <div class="bg-overlay"></div>
+    <div class="bg-grid-lines"></div>
+  </div>
+
   <div class="app-shell rank-page-shell">
     <header class="hero-card glass rank-hero-only">
       <div class="hero-copy">
@@ -46,12 +53,10 @@
         try {
           const parsed = JSON.parse(localStorage.getItem(key));
           const hasData = parsed && (parsed.playersDatabase?.length || parsed.history?.length || Object.keys(parsed.ranking || {}).length);
-          if (hasData) {
-            return parsed;
-          }
+          if (hasData) return parsed;
         } catch {}
       }
-      return { ranking: {} };
+      return { playersDatabase: [], ranking: {} };
     }
 
     function getTierLabel(points) {
@@ -65,19 +70,10 @@
       return 'Base do MM';
     }
 
-    function formatPoints(points) {
-      const sign = points > 0 ? '+' : '';
-      return `${sign}${points}`;
-    }
-
     function normalizeSkill(skill) {
       const parsed = Number(skill);
       if (!Number.isFinite(parsed) || parsed < 0) return 0;
       return Math.round(parsed);
-    }
-
-    function formatSkill(skill) {
-      return `${normalizeSkill(skill).toLocaleString('pt-BR')} CS2`;
     }
 
     function escapeHtml(str) {
@@ -128,10 +124,10 @@
           <div class="rank-emblem"><span>#${index + 1}</span></div>
           <div>
             <div class="rank-name">${escapeHtml(name)}</div>
-            <div class="rank-meta">${data.wins}V • ${data.losses}D • ${data.matches} partidas • ${formatSkill(skillMap[name] || 0)}</div>
+            <div class="rank-meta">${data.wins}V • ${data.losses}D • ${data.matches} partidas • ${normalizeSkill(skillMap[name] || 0).toLocaleString('pt-BR')} CS</div>
           </div>
           <div class="rank-right">
-            <div class="${pointsClass}">${formatPoints(data.points)}</div>
+            <div class="${pointsClass}">${data.points > 0 ? '+' : ''}${data.points}</div>
             <div class="rank-tier">${getTierLabel(data.points)}</div>
           </div>
         `;
