@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'cs-dos-campeoes-local-data-v6';
-const LEGACY_STORAGE_KEYS = ['cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
+const STORAGE_KEY = 'cs-dos-campeoes-local-data-v7';
+const LEGACY_STORAGE_KEYS = ['cs-dos-campeoes-local-data-v6', 'cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
 const MATCH_POINTS = 500;
 
 const MAPS = [
@@ -12,7 +12,10 @@ const MAPS = [
   { id: 'vertigo', name: 'Vertigo', image: 'https://images.steamusercontent.com/ugc/2059877063158746776/4B998C3D3E81047F84F4EC0F5900A6BD7C7AE0C1/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Pra separar quem tem coragem de quem treme na rampa.' }
 ];
 
-const STEAM_PROXY_BASE = 'https://api.allorigins.win/raw?url=';
+const STEAM_PROXY_URLS = [
+  (targetUrl) => `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+  (targetUrl) => `https://cors.isomorphic-git.org/${targetUrl}`
+];
 
 const steamProfileInput = document.getElementById('steamProfileInput');
 const playerSkillInput = document.getElementById('playerSkillInput');
@@ -230,15 +233,16 @@ function parseSteamProfileUrl(url) {
 
   try {
     const parsed = new URL(value);
-    if (!parsed.hostname.includes('steamcommunity.com')) return null;
+    const hostname = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+    if (hostname !== 'steamcommunity.com') return null;
     const parts = parsed.pathname.split('/').filter(Boolean);
     if (parts.length < 2) return null;
 
-    if (parts[0] === 'profiles') {
+    if (parts[0].toLowerCase() === 'profiles') {
       return { type: 'profiles', value: parts[1], url: `https://steamcommunity.com/profiles/${parts[1]}/` };
     }
 
-    if (parts[0] === 'id') {
+    if (parts[0].toLowerCase() === 'id') {
       return { type: 'id', value: parts[1], url: `https://steamcommunity.com/id/${parts[1]}/` };
     }
 
@@ -249,11 +253,32 @@ function parseSteamProfileUrl(url) {
 }
 
 function getXmlTagValue(xmlText, tagName) {
-  const match = xmlText.match(new RegExp(`<${tagName}>([\\s\\S]*?)<\\/${tagName}>`, 'i'));
+  const match = xmlText.match(new RegExp(`<${tagName}>([\s\S]*?)<\/${tagName}>`, 'i'));
   if (!match) return '';
   return match[1]
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
     .trim();
+}
+
+async function fetchTextWithProxies(targetUrl) {
+  let lastError = null;
+
+  for (const buildProxyUrl of STEAM_PROXY_URLS) {
+    const proxyUrl = buildProxyUrl(targetUrl);
+    try {
+      const response = await fetch(proxyUrl, { cache: 'no-store' });
+      if (!response.ok) {
+        lastError = new Error(`Proxy indisponível (${response.status})`);
+        continue;
+      }
+      const text = await response.text();
+      if (text) return text;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Falha ao consultar Steam agora.');
 }
 
 async function fetchSteamProfile(profileUrl) {
@@ -263,15 +288,10 @@ async function fetchSteamProfile(profileUrl) {
   }
 
   const xmlUrl = `${parsed.url}?xml=1`;
-  const proxyUrl = `${STEAM_PROXY_BASE}${encodeURIComponent(xmlUrl)}`;
-  const response = await fetch(proxyUrl);
-  if (!response.ok) {
-    throw new Error('Não foi possível ler esse perfil Steam agora.');
-  }
+  const text = await fetchTextWithProxies(xmlUrl);
 
-  const text = await response.text();
-  if (!text || text.includes('<error>')) {
-    throw new Error('Perfil Steam não encontrado ou privado.');
+  if (!text || text.includes('<error>') || !text.includes('<steamID64>')) {
+    throw new Error('Perfil Steam não encontrado, privado ou proxy fora do ar.');
   }
 
   const steamId64 = getXmlTagValue(text, 'steamID64');
@@ -282,8 +302,8 @@ async function fetchSteamProfile(profileUrl) {
     ? `https://steamcommunity.com/id/${customURL}/`
     : (getXmlTagValue(text, 'profileURL') || parsed.url);
 
-  if (!personaName) {
-    throw new Error('Não foi possível carregar o nome do perfil Steam.');
+  if (!personaName || !steamId64) {
+    throw new Error('Não foi possível carregar os dados do perfil Steam.');
   }
 
   return {
@@ -307,7 +327,7 @@ function setSteamPreview(data) {
   steamPreview.classList.remove('hidden');
   steamPreviewAvatar.src = data.avatar || 'logo.png';
   steamPreviewName.textContent = data.personaName;
-  steamPreviewUrl.textContent = data.steamUrl;
+  steamPreviewUrl.textContent = data.steamUrl || '';
 }
 
 function getPlayerRecord(name) {
@@ -323,14 +343,25 @@ function getPlayerAvatar(name) {
   return getPlayerRecord(name)?.avatar || 'logo.png';
 }
 
-function getUsedDrawNames() {
-  if (!currentDraw) return [];
-  return [...currentDraw.ct, ...currentDraw.t].map((name) => name.toLowerCase());
+function getPlayerStats(name) {
+  const record = state.ranking?.[name] || { wins: 0, losses: 0, points: 0, matches: 0 };
+  return {
+    wins: Number(record.wins) || 0,
+    losses: Number(record.losses) || 0,
+    points: Number(record.points) || 0,
+    matches: Number(record.matches) || 0
+  };
 }
 
-function getAvailablePlayersForDraw() {
-  const used = getUsedDrawNames();
-  return state.playersDatabase.filter((dbPlayer) => !used.includes(dbPlayer.name.toLowerCase()));
+function getPlayerStatsHtml(name) {
+  const stats = getPlayerStats(name);
+  return `
+    <div class="player-stat-chips">
+      <span class="player-stat-chip">${stats.wins} vitórias</span>
+      <span class="player-stat-chip">${stats.losses} derrotas</span>
+      <span class="player-stat-chip">${stats.points} pontos</span>
+    </div>
+  `;
 }
 
 function addPlayerToDatabase(profile, skill = 0) {
@@ -380,6 +411,7 @@ function removePlayerFromDatabase(name) {
   renderDatabasePlayers();
   renderPlayers();
   renderTeams(currentDraw?.ct || [], currentDraw?.t || []);
+  renderRanking();
   setSummary(`${normalized} foi removido.`);
 }
 
@@ -467,7 +499,8 @@ function renderDatabasePlayers() {
         <img class="player-avatar" src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}">
         <div class="db-player-meta">
           <strong>${escapeHtml(player.name)}</strong>
-          <small class="db-skill">${formatSkill(player.skill)}</small>
+          <small class="db-skill">CSficação: ${formatSkill(player.skill)}</small>
+          ${getPlayerStatsHtml(player.name)}
         </div>
       </div>
       <div class="db-actions">
@@ -495,7 +528,7 @@ function renderPlayers() {
         <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}">
         <div class="db-player-meta">
           <strong>${index + 1}. ${escapeHtml(name)}</strong>
-          <small class="db-skill">${formatSkill(getPlayerSkill(name))}</small>
+          <small class="db-skill">CSficação: ${formatSkill(getPlayerSkill(name))}</small>
         </div>
       </div>
       <button class="remove-btn" data-index="${index}" aria-label="Remover ${escapeHtml(name)}">×</button>
@@ -526,7 +559,7 @@ function renderTeams(ct, t) {
         <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}">
         <div class="db-player-meta">
           <strong>${escapeHtml(name)}</strong>
-          <small class="db-skill">${formatSkill(getPlayerSkill(name))}</small>
+          <small class="db-skill">CSficação: ${formatSkill(getPlayerSkill(name))}</small>
         </div>
       </div>
     `;
@@ -541,7 +574,7 @@ function renderTeams(ct, t) {
         <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}">
         <div class="db-player-meta">
           <strong>${escapeHtml(name)}</strong>
-          <small class="db-skill">${formatSkill(getPlayerSkill(name))}</small>
+          <small class="db-skill">CSficação: ${formatSkill(getPlayerSkill(name))}</small>
         </div>
       </div>
     `;
@@ -744,6 +777,7 @@ function finalizeMatch(winnerLabel) {
   losers.forEach((name) => applyMatchResultToPlayer(name, false));
 
   saveState();
+  renderDatabasePlayers();
   renderRanking();
   renderHistory();
   statusPill.textContent = 'Partida finalizada';
@@ -778,6 +812,7 @@ function saveEditedMatch() {
   match.t = editTPlayers.value.split('\n').map((entry) => normalizeName(entry)).filter(Boolean);
 
   recomputeRankingFromHistory();
+  renderDatabasePlayers();
   renderRanking();
   renderHistory();
   closeEditModal();
@@ -791,11 +826,18 @@ async function handleSteamLookupPreview() {
     return;
   }
 
+  steamPreview.classList.remove('hidden');
+  steamPreviewAvatar.src = 'logo.png';
+  steamPreviewName.textContent = 'Carregando perfil Steam...';
+  steamPreviewUrl.textContent = '';
+
   try {
     const profile = await fetchSteamProfile(url);
-    setSteamPreview(profile);
-  } catch {
+    setSteamPreview({ ...profile, inputUrl: normalizeSteamUrl(url) });
+    setSummary(`Perfil carregado: ${profile.personaName}.`);
+  } catch (error) {
     setSteamPreview(null);
+    setSummary(error.message || 'Não foi possível ler esse perfil Steam agora.');
   }
 }
 
@@ -810,16 +852,18 @@ async function handleAddPlayer() {
 
   addPlayerBtn.disabled = true;
   addPlayerBtn.textContent = 'Carregando...';
+  setSummary('Buscando dados do perfil Steam...');
 
   try {
-    const profile = steamPreviewData && steamPreviewData.inputUrl === normalizeSteamUrl(steamUrl)
+    const normalizedInput = normalizeSteamUrl(steamUrl);
+    const profile = steamPreviewData && steamPreviewData.inputUrl === normalizedInput
       ? steamPreviewData
-      : await fetchSteamProfile(steamUrl);
+      : { ...(await fetchSteamProfile(steamUrl)), inputUrl: normalizedInput };
 
     const result = addPlayerToDatabase(profile, skill);
     renderDatabasePlayers();
     renderRanking();
-    setSteamPreview({ ...profile, inputUrl: normalizeSteamUrl(steamUrl) });
+    setSteamPreview(profile);
     steamProfileInput.value = profile.steamUrl;
     playerSkillInput.value = '';
 

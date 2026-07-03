@@ -332,7 +332,8 @@ textarea { resize: vertical; min-height: 140px; }
 .small-pill,
 .status-pill,
 .map-chip,
-.team-tag {
+.team-tag,
+.player-stat-chip {
   border-radius: 999px;
   font-weight: 800;
 }
@@ -384,7 +385,7 @@ textarea { resize: vertical; min-height: 140px; }
 }
 
 .db-item {
-  min-height: 72px;
+  min-height: 86px;
 }
 
 .db-player-main,
@@ -399,7 +400,7 @@ textarea { resize: vertical; min-height: 140px; }
 .db-player-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -414,6 +415,20 @@ textarea { resize: vertical; min-height: 140px; }
 .db-skill {
   color: var(--muted);
   font-size: .84rem;
+}
+
+.player-stat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.player-stat-chip {
+  padding: 5px 9px;
+  font-size: .74rem;
+  color: #d9e6f5;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.06);
 }
 
 .player-avatar,
