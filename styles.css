@@ -1390,3 +1390,157 @@ select option:hover {
   background: #16345f;
   color: #ffffff;
 }
+
+.compact-arena-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.split-draw-actions,
+.compact-secondary-actions,
+.compact-winner-actions {
+  width: 100%;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.split-draw-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.compact-secondary-actions,
+.compact-winner-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.shuffle-btn,
+.random-draw-btn,
+#rerollBtn,
+#addAfterDrawBtn,
+#startMatchBtn,
+#ctWinBtn,
+#tWinBtn {
+  width: 100%;
+  min-height: 58px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 1rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.random-draw-btn,
+#rerollBtn,
+#addAfterDrawBtn,
+#startMatchBtn,
+#ctWinBtn,
+#tWinBtn {
+  background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+}
+
+.random-draw-btn {
+  border-color: rgba(103,200,255,.28);
+  color: #d8f0ff;
+  background: linear-gradient(180deg, rgba(20,58,92,.55), rgba(16,32,50,.5));
+}
+
+#rerollBtn {
+  color: #f6f0e6;
+}
+
+#addAfterDrawBtn {
+  color: #e3ebf7;
+}
+
+#startMatchBtn {
+  border-color: rgba(244,161,51,.22);
+  color: #ffe8c6;
+}
+
+#ctWinBtn {
+  border-color: rgba(103,200,255,.28);
+  color: #d6f2ff;
+  background: linear-gradient(180deg, rgba(13,64,91,.62), rgba(9,27,43,.58));
+}
+
+#tWinBtn {
+  border-color: rgba(241,177,91,.28);
+  color: #ffe3c0;
+  background: linear-gradient(180deg, rgba(97,59,14,.55), rgba(44,27,8,.52));
+}
+
+.shuffle-btn:hover,
+.random-draw-btn:hover,
+#rerollBtn:hover,
+#addAfterDrawBtn:hover,
+#startMatchBtn:hover,
+#ctWinBtn:hover,
+#tWinBtn:hover,
+.primary-cta:hover,
+.secondary-btn:hover,
+.ghost-btn:hover,
+.control-btn:hover,
+.nav-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(0,0,0,.24);
+}
+
+.shuffle-btn,
+.random-draw-btn,
+#rerollBtn,
+#addAfterDrawBtn,
+#startMatchBtn,
+#ctWinBtn,
+#tWinBtn,
+.primary-cta,
+.secondary-btn,
+.ghost-btn,
+.control-btn,
+.nav-link {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease, opacity .18s ease;
+}
+
+.history-header {
+  align-items: flex-start;
+}
+
+.history-admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 180px;
+}
+
+@media (max-width: 1024px) {
+  .split-draw-actions,
+  .compact-secondary-actions,
+  .compact-winner-actions {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .split-draw-actions,
+  .compact-secondary-actions,
+  .compact-winner-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .history-admin-actions {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .history-admin-actions .ghost-btn {
+    width: 100%;
+  }
+}
