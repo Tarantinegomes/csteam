@@ -1544,3 +1544,181 @@ select option:hover {
     width: 100%;
   }
 }
+
+.split-draw-actions,
+.compact-secondary-actions,
+.compact-winner-actions {
+  position: relative;
+}
+
+.split-draw-actions {
+  padding: 14px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.015));
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 42px rgba(0,0,0,.18);
+}
+
+.compact-secondary-actions,
+.compact-winner-actions {
+  padding: 10px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255,255,255,.028), rgba(255,255,255,.012));
+  border: 1px solid rgba(255,255,255,.05);
+}
+
+.shuffle-btn,
+.random-draw-btn,
+#rerollBtn,
+#addAfterDrawBtn,
+#startMatchBtn,
+#ctWinBtn,
+#tWinBtn {
+  position: relative;
+  overflow: hidden;
+  font-weight: 900;
+  letter-spacing: -.01em;
+}
+
+.shuffle-btn::before,
+.random-draw-btn::before,
+#rerollBtn::before,
+#addAfterDrawBtn::before,
+#startMatchBtn::before,
+#ctWinBtn::before,
+#tWinBtn::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+  pointer-events: none;
+}
+
+.shuffle-btn::after,
+.random-draw-btn::after,
+#rerollBtn::after,
+#addAfterDrawBtn::after,
+#startMatchBtn::after,
+#ctWinBtn::after,
+#tWinBtn::after {
+  content: '';
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), rgba(255,255,255,.03));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.shuffle-btn,
+.random-draw-btn,
+#rerollBtn,
+#addAfterDrawBtn,
+#startMatchBtn,
+#ctWinBtn,
+#tWinBtn {
+  justify-content: flex-start;
+  padding-left: 70px;
+}
+
+.shuffle-btn .btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shuffle-btn .btn-label::before {
+  content: '★';
+  font-size: 1rem;
+}
+
+.random-draw-btn::after {
+  content: '⟳';
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  color: #d8f0ff;
+}
+
+#rerollBtn::after {
+  content: '↻';
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  color: #fff0d4;
+}
+
+#addAfterDrawBtn::after {
+  content: '+';
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  color: #eff6ff;
+}
+
+#startMatchBtn::after {
+  content: '▶';
+  display: grid;
+  place-items: center;
+  font-size: .95rem;
+  color: #ffe5bb;
+}
+
+#ctWinBtn::after {
+  content: 'CT';
+  display: grid;
+  place-items: center;
+  font-size: .8rem;
+  color: #d6f2ff;
+}
+
+#tWinBtn::after {
+  content: 'TR';
+  display: grid;
+  place-items: center;
+  font-size: .8rem;
+  color: #ffe3c0;
+}
+
+.shuffle-btn:hover,
+.random-draw-btn:hover,
+#rerollBtn:hover,
+#addAfterDrawBtn:hover,
+#startMatchBtn:hover,
+#ctWinBtn:hover,
+#tWinBtn:hover {
+  border-color: rgba(255,255,255,.16);
+}
+
+.shuffle-btn:active,
+.random-draw-btn:active,
+#rerollBtn:active,
+#addAfterDrawBtn:active,
+#startMatchBtn:active,
+#ctWinBtn:active,
+#tWinBtn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 720px) {
+  .split-draw-actions,
+  .compact-secondary-actions,
+  .compact-winner-actions {
+    padding: 8px;
+  }
+
+  .shuffle-btn,
+  .random-draw-btn,
+  #rerollBtn,
+  #addAfterDrawBtn,
+  #startMatchBtn,
+  #ctWinBtn,
+  #tWinBtn {
+    padding-left: 66px;
+  }
+}
