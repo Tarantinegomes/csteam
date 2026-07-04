@@ -254,6 +254,28 @@
     </div>
   </div>
 
+  <div class="modal-backdrop hidden" id="skillModal">
+    <div class="modal-card glass skill-modal-card">
+      <div class="panel-header">
+        <h2>Atualizar CSficação</h2>
+        <button id="closeSkillModalBtn" class="ghost-btn compact-btn">Fechar</button>
+      </div>
+
+      <div class="skill-modal-player" id="skillModalPlayer"></div>
+
+      <div class="modal-grid skill-modal-grid">
+        <div>
+          <label for="editSkillInput">Nova CSficação</label>
+          <input id="editSkillInput" type="number" min="0" step="1" placeholder="Ex: 14500" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="saveSkillBtn" class="secondary-btn">Salvar CSficação</button>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

@@ -995,3 +995,53 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .ranking-item-rich {
   grid-template-columns: 60px minmax(0, 1fr) auto;
 }
+
+.small-action.edit-skill-btn {
+  background: rgba(244,161,51,.18);
+  color: #ffe4bf;
+}
+
+.skill-modal-card {
+  max-width: 520px;
+}
+
+.skill-modal-player {
+  margin-top: 18px;
+}
+
+.skill-modal-player-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+.skill-modal-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.1);
+}
+
+.skill-modal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skill-modal-meta strong {
+  font-size: 1rem;
+}
+
+.skill-modal-meta span {
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.skill-modal-grid {
+  margin-top: 16px;
+}

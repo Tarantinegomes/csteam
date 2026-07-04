@@ -76,6 +76,11 @@ const steamPreview = document.getElementById('steamPreview');
 const steamPreviewAvatar = document.getElementById('steamPreviewAvatar');
 const steamPreviewName = document.getElementById('steamPreviewName');
 const steamPreviewUrl = document.getElementById('steamPreviewUrl');
+const skillModal = document.getElementById('skillModal');
+const closeSkillModalBtn = document.getElementById('closeSkillModalBtn');
+const saveSkillBtn = document.getElementById('saveSkillBtn');
+const editSkillInput = document.getElementById('editSkillInput');
+const skillModalPlayer = document.getElementById('skillModalPlayer');
 
 let players = [];
 let isRolling = false;
@@ -83,6 +88,7 @@ let isMapRolling = false;
 let currentDraw = null;
 let currentMatch = null;
 let editingMatchId = null;
+let editingSkillPlayer = null;
 let steamPreviewData = null;
 let state = loadState();
 
@@ -490,6 +496,51 @@ function addPlayerToDatabase(profile, skill = 0) {
   return 'created';
 }
 
+function updatePlayerSkill(name, newSkill) {
+  const player = getPlayerRecord(name);
+  if (!player) return false;
+  player.skill = normalizeSkill(newSkill);
+  saveState();
+  addAdminLog('skill', `CSficação de ${player.name} atualizada para ${player.skill}.`, { player: player.name, skill: player.skill });
+  renderDatabasePlayers();
+  renderPlayers();
+  renderTeams(currentDraw?.ct || [], currentDraw?.t || []);
+  renderRanking();
+  return true;
+}
+
+function openSkillModal(name) {
+  const player = getPlayerRecord(name);
+  if (!player) return;
+  editingSkillPlayer = player.name;
+  editSkillInput.value = player.skill;
+  skillModalPlayer.innerHTML = `
+    <div class="skill-modal-player-card">
+      <img class="skill-modal-avatar" src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
+      <div class="skill-modal-meta">
+        <strong>${escapeHtml(player.name)}</strong>
+        <span>Atual: ${player.skill.toLocaleString('pt-BR')} CS</span>
+      </div>
+    </div>
+  `;
+  skillModal.classList.remove('hidden');
+}
+
+function closeSkillModal() {
+  editingSkillPlayer = null;
+  editSkillInput.value = '';
+  skillModalPlayer.innerHTML = '';
+  skillModal.classList.add('hidden');
+}
+
+function saveSkillUpdate() {
+  if (!editingSkillPlayer) return;
+  const newSkill = normalizeSkill(editSkillInput.value);
+  updatePlayerSkill(editingSkillPlayer, newSkill);
+  closeSkillModal();
+  setSummary(`CSficação de ${editingSkillPlayer} atualizada para ${newSkill.toLocaleString('pt-BR')}.`);
+}
+
 function removePlayerFromDatabase(name) {
   if (!isAdminLogged()) {
     setSummary('Apenas administradores podem remover jogadores cadastrados.');
@@ -579,6 +630,7 @@ function renderDatabasePlayers() {
       </div>
       <div class="db-actions">
         <button class="small-action add-db-btn" data-add-db="${escapeHtml(player.name)}">+</button>
+        <button class="small-action edit-skill-btn" data-edit-skill="${escapeHtml(player.name)}">✎</button>
         ${adminVisible ? `<button class="small-action remove-db-btn" data-remove-db="${escapeHtml(player.name)}">×</button>` : ''}
       </div>
     </li>
@@ -684,11 +736,14 @@ function renderRanking() {
   }
 
   rankingList.innerHTML = entries.map((entry, index) => `
-    <li class="ranking-item">
+    <li class="ranking-item ranking-item-rich">
       <div class="rank-emblem">#${index + 1}</div>
-      <div>
-        <div class="rank-name">${escapeHtml(entry.name)}</div>
-        <div class="rank-tier">${getRankTier(entry.points)} · ${entry.wins}V / ${entry.losses}D</div>
+      <div class="rank-player-block">
+        <img class="rank-avatar" src="${escapeHtml(getPlayerAvatar(entry.name))}" alt="${escapeHtml(entry.name)}" />
+        <div class="rank-player-meta">
+          <div class="rank-name">${escapeHtml(entry.name)}</div>
+          <div class="rank-tier">${getRankTier(entry.points)} · ${entry.wins}V / ${entry.losses}D</div>
+        </div>
       </div>
       <div class="rank-right">
         <div class="rank-points">${entry.points.toLocaleString('pt-BR')}</div>
@@ -995,11 +1050,19 @@ function bindEvents() {
   mapSelect.addEventListener('change', updateMapBanner);
   closeModalBtn.addEventListener('click', closeEditModal);
   saveEditBtn.addEventListener('click', saveEditedMatch);
+  closeSkillModalBtn.addEventListener('click', closeSkillModal);
+  saveSkillBtn.addEventListener('click', saveSkillUpdate);
 
   databasePlayerList.addEventListener('click', (event) => {
     const addButton = event.target.closest('[data-add-db]');
     if (addButton) {
       addPlayerToLobby(addButton.getAttribute('data-add-db'));
+      return;
+    }
+
+    const editSkillButton = event.target.closest('[data-edit-skill]');
+    if (editSkillButton) {
+      openSkillModal(editSkillButton.getAttribute('data-edit-skill'));
       return;
     }
 
