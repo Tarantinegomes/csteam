@@ -1633,23 +1633,29 @@ select option:hover {
 }
 
 .shuffle-btn .btn-label::before {
-  content: "\2696";
-  font-size: 1rem;
+  content: "BAL";
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
 }
 
 .random-draw-btn::after {
-  content: "\1F3B2";
+  content: "RND";
   display: grid;
   place-items: center;
-  font-size: 1rem;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
   color: #d8f0ff;
 }
 
 #rerollBtn::after {
-  content: "\21BB";
+  content: "RE";
   display: grid;
   place-items: center;
-  font-size: 1rem;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
   color: #fff0d4;
 }
 
@@ -1662,10 +1668,12 @@ select option:hover {
 }
 
 #startMatchBtn::after {
-  content: "\25B6";
+  content: "GO";
   display: grid;
   place-items: center;
-  font-size: .95rem;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
   color: #ffe5bb;
 }
 
