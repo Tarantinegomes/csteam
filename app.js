@@ -57,6 +57,7 @@ const teamB = document.getElementById('teamB');
 const rouletteNames = document.getElementById('rouletteNames');
 const rouletteAvatarCloud = document.getElementById('rouletteAvatarCloud');
 const rouletteDropZone = document.getElementById('rouletteDropZone');
+const animationStage = document.getElementById('animationStage');
 const statusPill = document.getElementById('statusPill');
 const rankingList = document.getElementById('rankingList');
 const historyList = document.getElementById('historyList');
@@ -95,6 +96,7 @@ let editingMatchId = null;
 let editingSkillPlayer = null;
 let steamPreviewData = null;
 let state = loadState();
+let audioContext = null;
 
 function loadAdminState() {
   try {
@@ -241,6 +243,57 @@ function goToNextMap() {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function ensureAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  if (!audioContext) {
+    audioContext = new AudioContextClass();
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().catch(() => {});
+  }
+  return audioContext;
+}
+
+function playTone(frequency, duration = 0.08, type = 'sine', volume = 0.03, delay = 0) {
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+  const start = ctx.currentTime + delay;
+  const oscillator = ctx.createOscillator();
+  const gainNode = ctx.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, start);
+  gainNode.gain.setValueAtTime(0.0001, start);
+  gainNode.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  oscillator.connect(gainNode);
+  gainNode.connect(ctx.destination);
+  oscillator.start(start);
+  oscillator.stop(start + duration + 0.02);
+}
+
+function playDrawStartSound() {
+  playTone(220, 0.09, 'sawtooth', 0.02, 0);
+  playTone(330, 0.09, 'triangle', 0.02, 0.05);
+  playTone(440, 0.12, 'sine', 0.018, 0.1);
+}
+
+function playRevealSound(team) {
+  if (team === 'ct') {
+    playTone(420, 0.08, 'triangle', 0.026, 0);
+    playTone(620, 0.1, 'sine', 0.02, 0.05);
+    return;
+  }
+  playTone(260, 0.08, 'sawtooth', 0.026, 0);
+  playTone(390, 0.1, 'triangle', 0.02, 0.05);
+}
+
+function playFinalRevealSound() {
+  playTone(392, 0.12, 'triangle', 0.025, 0);
+  playTone(523, 0.14, 'triangle', 0.024, 0.08);
+  playTone(659, 0.18, 'sine', 0.022, 0.16);
 }
 
 async function animateRandomMap() {
@@ -614,6 +667,20 @@ function updateStatus(label) {
   statusPill.textContent = label;
 }
 
+function triggerStageFlash(team) {
+  animationStage.classList.remove('flash-ct', 'flash-t', 'flash-final');
+  void animationStage.offsetWidth;
+  if (team === 'ct') {
+    animationStage.classList.add('flash-ct');
+    return;
+  }
+  if (team === 't') {
+    animationStage.classList.add('flash-t');
+    return;
+  }
+  animationStage.classList.add('flash-final');
+}
+
 function renderDatabasePlayers() {
   databaseCount.textContent = `${state.playersDatabase.length} cadastrados`;
   if (!state.playersDatabase.length) {
@@ -684,7 +751,7 @@ function renderTeams(ctNames, tNames) {
     }
 
     list.innerHTML = names.map((name, index) => `
-      <li class="team-item reveal-card ${index < 5 ? 'revealed' : ''}">
+      <li class="team-item reveal-card" style="animation-delay:${index * 70}ms">
         <div class="lobby-player-main">
           <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}" />
           <div class="db-player-meta">
@@ -817,6 +884,7 @@ function clearDropZone() {
 async function runDrawAnimation(pool, modeLabel) {
   rouletteAvatarCloud.classList.add('is-active');
   clearDropZone();
+  playDrawStartSound();
   let activeIndex = 0;
 
   for (let round = 0; round < 26; round += 1) {
@@ -824,6 +892,9 @@ async function runDrawAnimation(pool, modeLabel) {
     const activePlayer = pool[activeIndex];
     renderRouletteAvatarCloud(pool, activeIndex);
     rouletteNames.textContent = `${modeLabel} • ${activePlayer.name}`;
+    if (round % 4 === 0) {
+      playTone(260 + round * 8, 0.04, 'square', 0.01, 0);
+    }
     await sleep(70 + round * 10);
   }
 
@@ -885,17 +956,31 @@ function buildRandomTeams(pool) {
   };
 }
 
+function getRevealPosition(team, index) {
+  const verticalStart = 84;
+  const gap = 34;
+  return {
+    left: team === 'ct' ? '23%' : '77%',
+    top: `${verticalStart + index * gap}px`
+  };
+}
+
 async function runTeamReveal(draw) {
   clearDropZone();
-  const sequence = [
-    ...draw.ctPlayers.map((player) => ({ ...player, team: 'ct' })),
-    ...draw.tPlayers.map((player) => ({ ...player, team: 't' }))
-  ];
+  const sequence = [];
+  for (let i = 0; i < 5; i += 1) {
+    sequence.push({ ...draw.ctPlayers[i], team: 'ct', slot: i });
+    sequence.push({ ...draw.tPlayers[i], team: 't', slot: i });
+  }
 
   for (let index = 0; index < sequence.length; index += 1) {
     const player = sequence[index];
     const card = document.createElement('div');
-    card.className = `drop-card ${player.team}`;
+    const pos = getRevealPosition(player.team, player.slot);
+    card.className = `drop-card stacked ${player.team}`;
+    card.style.left = pos.left;
+    card.style.top = pos.top;
+    card.style.setProperty('--stack-offset', `${player.slot * 6}px`);
     card.innerHTML = `
       <img src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
       <div class="drop-card-meta">
@@ -903,12 +988,16 @@ async function runTeamReveal(draw) {
         <span>${player.team === 'ct' ? 'CT' : 'TR'} • ${player.skill.toLocaleString('pt-BR')} CS</span>
       </div>
     `;
-    card.style.setProperty('--delay', `${index * 60}ms`);
     rouletteDropZone.appendChild(card);
     requestAnimationFrame(() => card.classList.add('drop-in'));
     rouletteNames.textContent = `${player.name} → ${player.team === 'ct' ? 'CT' : 'TR'}`;
-    await sleep(120);
+    triggerStageFlash(player.team);
+    playRevealSound(player.team);
+    await sleep(145);
   }
+
+  triggerStageFlash('final');
+  playFinalRevealSound();
 }
 
 async function drawTeams(mode = 'balanced') {
@@ -918,6 +1007,7 @@ async function drawTeams(mode = 'balanced') {
   }
 
   if (isRolling) return;
+  ensureAudioContext();
   isRolling = true;
   currentDrawMode = mode;
   updateStatus(mode === 'balanced' ? 'Sorteando balanceado' : 'Sorteando normal');
@@ -1033,6 +1123,7 @@ function clearLobby() {
   renderTeams([], []);
   clearRouletteAvatarCloud();
   clearDropZone();
+  animationStage.classList.remove('flash-ct', 'flash-t', 'flash-final');
   startMatchBtn.disabled = false;
   updateStatus('Aguardando');
   rouletteNames.textContent = 'PRONTO';
@@ -1061,6 +1152,7 @@ function resetAllData() {
   renderRanking();
   clearRouletteAvatarCloud();
   clearDropZone();
+  animationStage.classList.remove('flash-ct', 'flash-t', 'flash-final');
   updateStatus('Resetado');
   rouletteNames.textContent = 'PRONTO';
   setSummary('Todos os dados foram resetados.');
