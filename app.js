@@ -44,6 +44,7 @@ const startMatchBtn = document.getElementById('startMatchBtn');
 const ctWinBtn = document.getElementById('ctWinBtn');
 const tWinBtn = document.getElementById('tWinBtn');
 const resetHistoryBtn = document.getElementById('resetHistoryBtn');
+const historyAdminActions = document.getElementById('historyAdminActions');
 const nextMapBtn = document.getElementById('nextMapBtn');
 const randomMapBtn = document.getElementById('randomMapBtn');
 const mapRoulette = document.getElementById('mapRoulette');
@@ -845,6 +846,13 @@ function buildHistoryItem(match) {
       </div>
     </li>
   `;
+}
+
+function updateAdminUiVisibility() {
+  const adminVisible = isAdminLogged();
+  if (historyAdminActions) {
+    historyAdminActions.classList.toggle('hidden', !adminVisible);
+  }
 }
 
 function renderHistory() {
