@@ -2077,3 +2077,118 @@ select option:hover {
     min-height: 96px;
   }
 }
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background-image: linear-gradient(180deg, rgba(5,6,8,.54), rgba(5,6,8,.86)), var(--map-bg-image);
+  background-size: cover;
+  background-position: center;
+  opacity: .92;
+  filter: saturate(1.05) contrast(1.04) brightness(.72);
+  transform: scale(1.03);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top left, rgba(244,161,51,.10), transparent 22%),
+    linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.42));
+}
+
+.map-banner-image {
+  background-size: cover;
+  background-position: center;
+}
+
+.map-banner-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--map-banner-logo);
+  background-repeat: no-repeat;
+  background-position: right 26px bottom 22px;
+  background-size: min(240px, 32%);
+  opacity: .95;
+  filter: drop-shadow(0 18px 34px rgba(0,0,0,.28));
+}
+
+.map-banner-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at right center, rgba(255,255,255,.08), transparent 18%),
+    linear-gradient(90deg, rgba(0,0,0,.06), rgba(0,0,0,.18));
+}
+
+.map-roulette-card,
+.map-node,
+.history-map-thumb,
+.drop-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.map-roulette-card::before,
+.map-node::before,
+.history-map-thumb::before,
+.drop-card::after {
+  content: '';
+  position: absolute;
+  inset: auto 12px 12px auto;
+  width: 70px;
+  height: 70px;
+  background-image: var(--map-logo-image);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: .92;
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,.38));
+  pointer-events: none;
+}
+
+.map-node::before {
+  width: 54px;
+  height: 54px;
+  inset: auto 10px 10px auto;
+  opacity: .88;
+}
+
+.history-map-thumb::before {
+  width: 64px;
+  height: 64px;
+}
+
+.drop-card::after {
+  width: 62px;
+  height: 62px;
+  inset: 10px 10px auto auto;
+}
+
+.map-roulette-card span,
+.history-map-thumb span {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 720px) {
+  .map-banner-image::before {
+    background-size: 110px;
+    background-position: right 14px bottom 14px;
+    opacity: .82;
+  }
+
+  .map-roulette-card::before,
+  .history-map-thumb::before,
+  .drop-card::after {
+    width: 48px;
+    height: 48px;
+  }
+}
