@@ -2244,3 +2244,127 @@ body::after {
     width: 100px;
   }
 }
+
+.unified-top-bar {
+  padding: 16px 20px;
+  border-radius: 26px;
+  background: linear-gradient(90deg, rgba(12,17,24,.94), rgba(18,29,44,.88) 52%, rgba(10,14,20,.92));
+  border: 1px solid rgba(121, 163, 210, .18);
+  box-shadow: 0 18px 40px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.enhanced-brand-lockup {
+  gap: 16px;
+}
+
+.enhanced-logo-mark {
+  width: 78px;
+  height: 78px;
+  border-radius: 20px;
+  padding: 6px;
+  background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 18px 34px rgba(0,0,0,.24), 0 0 0 1px rgba(255,255,255,.04);
+}
+
+.main-site-logo {
+  object-fit: contain;
+  transform: scale(1.06);
+}
+
+.enhanced-brand-texts .brand-title {
+  font-size: 2rem;
+  letter-spacing: -.03em;
+}
+
+.enhanced-brand-texts .brand-subtitle {
+  font-size: 1rem;
+  color: #bcc9d9;
+}
+
+.hero-with-brand-overlay {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(11,17,24,.92), rgba(20,34,51,.78) 48%, rgba(10,14,20,.90)),
+    radial-gradient(circle at left top, rgba(243,164,60,.10), transparent 26%);
+  border: 1px solid rgba(125, 163, 210, .14);
+}
+
+.hero-brand-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 42px;
+  z-index: 0;
+}
+
+.hero-brand-bg-image {
+  width: min(420px, 38vw);
+  max-width: 44%;
+  opacity: .13;
+  filter: drop-shadow(0 16px 34px rgba(0,0,0,.26));
+}
+
+.hero-copy-elevated,
+.enhanced-register-card {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-copy-elevated h1 {
+  font-size: clamp(2.2rem, 4.8vw, 3.3rem);
+  letter-spacing: -.04em;
+}
+
+.hero-copy-elevated p {
+  color: #d3dceb;
+  font-size: 1.06rem;
+}
+
+.enhanced-register-card {
+  background: linear-gradient(180deg, rgba(5,8,12,.78), rgba(4,7,10,.90));
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 34px rgba(0,0,0,.22);
+}
+
+.enhanced-register-card .primary-register-btn {
+  background: linear-gradient(135deg, #f4a133, #f8c36f);
+  color: #1e1307;
+  box-shadow: 0 14px 28px rgba(244,161,51,.22);
+}
+
+.enhanced-register-card input {
+  background: rgba(255,255,255,.035);
+  border-color: rgba(255,255,255,.09);
+}
+
+@media (max-width: 720px) {
+  .unified-top-bar {
+    padding: 14px 16px;
+  }
+
+  .enhanced-logo-mark {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+  }
+
+  .enhanced-brand-texts .brand-title {
+    font-size: 1.45rem;
+  }
+
+  .hero-brand-bg {
+    justify-content: center;
+    padding-right: 0;
+  }
+
+  .hero-brand-bg-image {
+    width: 240px;
+    max-width: 70%;
+    opacity: .10;
+  }
+}
