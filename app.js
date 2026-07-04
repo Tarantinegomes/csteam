@@ -20,6 +20,12 @@ const STEAM_FALLBACK_PROFILES = {
     personaName: 'TARANTINE',
     avatar: 'https://avatars.fastly.steamstatic.com/ae3624efee29ed79e60ee5643b93108c368dacc7_full.jpg',
     steamUrl: 'https://steamcommunity.com/id/TARANTINE/'
+  },
+  'https://steamcommunity.com/profiles/76561198163057862/': {
+    steamId64: '76561198163057862',
+    personaName: 'Steam Player',
+    avatar: 'logo.png',
+    steamUrl: 'https://steamcommunity.com/profiles/76561198163057862/'
   }
 };
 
@@ -267,10 +273,6 @@ function normalizeSkill(skill) {
   return Math.round(parsed);
 }
 
-function formatSkill(skill) {
-  return `${normalizeSkill(skill).toLocaleString('pt-BR')} CS`;
-}
-
 function normalizeSteamUrl(url) {
   return String(url || '').trim();
 }
@@ -381,7 +383,15 @@ async function fetchSteamProfile(profileUrl) {
   try {
     const xmlText = await fetchSteamXmlThroughProxies(xmlUrl);
     return parseSteamProfileXml(xmlText, parsed.url);
-  } catch (error) {
+  } catch {
+    if (parsed.type === 'profiles') {
+      return {
+        steamId64: parsed.value,
+        personaName: `Steam ${parsed.value.slice(-6)}`,
+        avatar: 'logo.png',
+        steamUrl: parsed.url
+      };
+    }
     throw new Error('Não foi possível carregar esse perfil Steam agora. Se o perfil for privado, a Steam pode bloquear os dados.');
   }
 }
