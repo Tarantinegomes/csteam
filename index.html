@@ -18,50 +18,52 @@
   </div>
 
   <div class="app-shell app-shell-compact">
-    <header class="top-nav glass compact-top-nav unified-top-bar">
-      <div class="brand-lockup compact-brand enhanced-brand-lockup">
-        <div class="brand-mark logo-mark enhanced-logo-mark">
-          <img src="logo.png" alt="CS dos Campeões" class="brand-logo-image main-site-logo">
+    <section class="hero-super-panel glass">
+      <header class="top-nav compact-top-nav unified-top-bar integrated-top-bar">
+        <div class="brand-lockup compact-brand enhanced-brand-lockup">
+          <div class="brand-mark logo-mark enhanced-logo-mark">
+            <img src="logo.png" alt="CS dos Campeões" class="brand-logo-image main-site-logo">
+          </div>
+          <div class="brand-texts enhanced-brand-texts">
+            <strong class="brand-title">CS dos Campeões</strong>
+            <span class="brand-subtitle">Monte lobby, sorteie times e acompanhe o rank.</span>
+          </div>
         </div>
-        <div class="brand-texts enhanced-brand-texts">
-          <strong class="brand-title">CS dos Campeões</strong>
-          <span class="brand-subtitle">Monte lobby, sorteie times e acompanhe o rank.</span>
+        <div class="top-nav-actions compact-nav-actions">
+          <a href="ranking.html" class="nav-link">Ranking</a>
         </div>
-      </div>
-      <div class="top-nav-actions compact-nav-actions">
-        <a href="ranking.html" class="nav-link">Ranking</a>
-      </div>
-    </header>
+      </header>
 
-    <section class="register-hero glass compact-register-hero hero-with-brand-overlay">
-      <div class="hero-brand-bg" aria-hidden="true">
-        <img src="Counter_Strike_2_Logo.png" alt="" class="hero-brand-bg-image">
-      </div>
-      <div class="register-hero-copy simple-hero-copy hero-copy-elevated">
-        <h1>CS dos Campeões</h1>
-        <p>Cadastro rápido para montar lobbies e entrar no sistema de pontuação.</p>
-      </div>
+      <section class="register-hero compact-register-hero hero-with-brand-overlay merged-hero-block">
+        <div class="hero-brand-bg" aria-hidden="true">
+          <img src="Counter_Strike_2_Logo.png" alt="" class="hero-brand-bg-image">
+        </div>
+        <div class="register-hero-copy simple-hero-copy hero-copy-elevated">
+          <h1>CS dos Campeões</h1>
+          <p>Cadastro rápido para montar lobbies e entrar no sistema de pontuação.</p>
+        </div>
 
-      <div class="register-card glass-lite enhanced-register-card" id="cadastro">
-        <div class="steam-register-grid">
-          <div class="steam-input-stack">
-            <label for="steamProfileInput">Link do perfil Steam</label>
-            <input id="steamProfileInput" type="url" placeholder="https://steamcommunity.com/id/seuusuario/" autocomplete="url" />
+        <div class="register-card glass-lite enhanced-register-card" id="cadastro">
+          <div class="steam-register-grid">
+            <div class="steam-input-stack">
+              <label for="steamProfileInput">Link do perfil Steam</label>
+              <input id="steamProfileInput" type="url" placeholder="https://steamcommunity.com/id/seuusuario/" autocomplete="url" />
+            </div>
+            <div class="steam-input-stack steam-skill-stack">
+              <label for="playerSkillInput">CSficação</label>
+              <input id="playerSkillInput" type="number" min="0" step="1" placeholder="Ex: 12000" />
+            </div>
+            <button id="addPlayerBtn" class="primary-cta primary-register-btn">Cadastrar</button>
           </div>
-          <div class="steam-input-stack steam-skill-stack">
-            <label for="playerSkillInput">CSficação</label>
-            <input id="playerSkillInput" type="number" min="0" step="1" placeholder="Ex: 12000" />
+          <div class="steam-preview hidden compact-steam-preview" id="steamPreview">
+            <img id="steamPreviewAvatar" class="steam-preview-avatar" alt="Avatar Steam" src="" />
+            <div class="steam-preview-info">
+              <strong id="steamPreviewName">Perfil encontrado</strong>
+              <span id="steamPreviewUrl"></span>
+            </div>
           </div>
-          <button id="addPlayerBtn" class="primary-cta primary-register-btn">Cadastrar</button>
         </div>
-        <div class="steam-preview hidden compact-steam-preview" id="steamPreview">
-          <img id="steamPreviewAvatar" class="steam-preview-avatar" alt="Avatar Steam" src="" />
-          <div class="steam-preview-info">
-            <strong id="steamPreviewName">Perfil encontrado</strong>
-            <span id="steamPreviewUrl"></span>
-          </div>
-        </div>
-      </div>
+      </section>
     </section>
 
     <main class="compact-main-grid">
