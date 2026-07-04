@@ -5,13 +5,13 @@ const LEGACY_STORAGE_KEYS = ['cs-dos-campeoes-local-data-v6', 'cs-dos-campeoes-l
 const MATCH_POINTS = 500;
 
 const MAPS = [
-  { id: 'inferno', name: 'Inferno', image: 'https://images.steamusercontent.com/ugc/2506897342782811667/BEA8679BFA4DB3A22C49EEA0D8D7A4D09F0C7E50/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Clássico, caótico, utilitária voando e amigo gritando no Discord.' },
-  { id: 'mirage', name: 'Mirage', image: 'https://images.steamusercontent.com/ugc/2059877063158746739/D855D1F3E66D2A4B9FBDA64E5E94AB7D2FC9D7C4/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'AWP no meio, janela aberta e alguém esquecendo a bomba.' },
-  { id: 'nuke', name: 'Nuke', image: 'https://images.steamusercontent.com/ugc/2059877063158746626/628B369B41B72C345ABF09957F117A5DA95AA516/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Dois andares de confusão tática e call torta.' },
-  { id: 'ancient', name: 'Ancient', image: 'https://images.steamusercontent.com/ugc/2059877063158746519/65EFB8232FB13A612651E90D2990D8C4D15A5A43/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Pedra, fumaça e todo mundo meio perdido.' },
-  { id: 'anubis', name: 'Anubis', image: 'https://images.steamusercontent.com/ugc/2059877063158746482/6879F6D0FE2A4A2B0F653BB2FC5D5A25D7A84A97/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Água, porrada seca e fé no avanço.' },
-  { id: 'dust2', name: 'Dust II', image: 'https://images.steamusercontent.com/ugc/2059877063158746588/418538AB71CA4A6E6C0466D26B857D3B6B534A31/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'O mapa da honra, do ego e do pixel.' },
-  { id: 'vertigo', name: 'Vertigo', image: 'https://images.steamusercontent.com/ugc/2059877063158746776/4B998C3D3E81047F84F4EC0F5900A6BD7C7AE0C1/?imw=1200&imh=675&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', description: 'Pra separar quem tem coragem de quem treme na rampa.' }
+  { id: 'inferno', name: 'Inferno', image: 'maps/inferno.webp', description: 'Banana pegando fogo, retake sofrido e a clássica trocação no bomb A.' },
+  { id: 'mirage', name: 'Mirage', image: 'maps/mirage.webp', description: 'Janela aberta, split explosivo e duelo seco no meio o round inteiro.' },
+  { id: 'nuke', name: 'Nuke', image: 'maps/nuke.webp', description: 'Vertical, tático e perfeito para fake, vent dive e call torta.' },
+  { id: 'ancient', name: 'Ancient', image: 'maps/ancient.webp', description: 'Pedra, utilitária pesada e avanço pressionando caverna o tempo todo.' },
+  { id: 'anubis', name: 'Anubis', image: 'maps/anubis.webp', description: 'Água, entrada forte e rounds rápidos com muita pressão de mapa.' },
+  { id: 'dust2', name: 'Dust II', image: 'maps/dust2.webp', description: 'O mapa mais clássico da rotação, com ego, pixel e bala cantando.' },
+  { id: 'overpass', name: 'Overpass', image: 'maps/overpass.webp', description: 'Controle de mapa, banheiro brigado e clutch nas rotações longas.' }
 ];
 
 const STEAM_FALLBACK_PROFILES = {
@@ -215,7 +215,9 @@ function populateMapSelects() {
   const options = MAPS.map((map) => `<option value="${map.id}">${map.name}</option>`).join('');
   mapSelect.innerHTML = options;
   editMapSelect.innerHTML = options;
-  mapSelect.value = 'inferno';
+  if (!MAPS.some((map) => map.id === mapSelect.value)) {
+    mapSelect.value = MAPS[0].id;
+  }
   updateMapBanner();
 }
 
@@ -225,7 +227,7 @@ function getMapById(id) {
 
 function updateMapBanner() {
   const map = getMapById(mapSelect.value);
-  mapBannerImage.style.backgroundImage = `linear-gradient(90deg, rgba(0,0,0,.42), rgba(0,0,0,.1)), url('${map.image}')`;
+  mapBannerImage.style.backgroundImage = `linear-gradient(90deg, rgba(0,0,0,.64), rgba(0,0,0,.18)), url('${map.image}')`;
   mapNameDisplay.textContent = map.name;
   mapDescription.textContent = map.description;
 }
@@ -297,6 +299,20 @@ function playFinalRevealSound() {
   playTone(659, 0.18, 'sine', 0.022, 0.16);
 }
 
+function renderMapRouletteCards(activeMapId = '') {
+  mapRoulette.innerHTML = `
+    <div class="map-roulette-label">Sorteando mapa...</div>
+    <div class="map-roulette-track">
+      ${MAPS.map((map) => `
+        <div class="map-roulette-card ${map.id === activeMapId ? 'is-active' : ''}" style="background-image:linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.58)), url('${map.image}')">
+          <span>${map.name}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="map-roulette-name" id="mapRouletteName">${getMapById(activeMapId || MAPS[0].id).name}</div>
+  `;
+}
+
 async function animateRandomMap() {
   if (isMapRolling) return;
   isMapRolling = true;
@@ -304,19 +320,19 @@ async function animateRandomMap() {
   nextMapBtn.disabled = true;
   mapRoulette.classList.remove('hidden');
 
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 16; i += 1) {
     const randomMap = MAPS[Math.floor(Math.random() * MAPS.length)];
-    mapRouletteName.textContent = randomMap.name;
-    await sleep(80 + i * 12);
+    renderMapRouletteCards(randomMap.id);
+    await sleep(90 + i * 14);
   }
 
   const finalMap = MAPS[Math.floor(Math.random() * MAPS.length)];
   mapSelect.value = finalMap.id;
-  mapRouletteName.textContent = finalMap.name;
+  renderMapRouletteCards(finalMap.id);
   updateMapBanner();
   setSummary(`Mapa sorteado: ${finalMap.name}.`);
 
-  await sleep(700);
+  await sleep(900);
   mapRoulette.classList.add('hidden');
   randomMapBtn.disabled = false;
   nextMapBtn.disabled = false;
@@ -828,21 +844,27 @@ function renderRanking() {
 function buildHistoryItem(match) {
   const recordedLabel = new Date(match.recordedAt).toLocaleString('pt-BR');
   const drawModeLabel = match.drawMode === 'random' ? 'Normal' : 'Balanceado';
+  const map = getMapById(match.mapId || 'inferno');
 
   return `
-    <li class="history-item">
-      <div class="history-topline">
-        <strong>${escapeHtml(match.mapName)}</strong>
-        <span>${recordedLabel}</span>
+    <li class="history-item history-item-rich">
+      <div class="history-map-thumb" style="background-image:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.72)), url('${map.image}')">
+        <span>${map.name}</span>
       </div>
-      <div class="history-body">
-        <span><strong>Modo:</strong> ${drawModeLabel}</span>
-        <span><strong>CT:</strong> ${escapeHtml(match.ct.join(', '))}</span>
-        <span><strong>TR:</strong> ${escapeHtml(match.t.join(', '))}</span>
-        <span><strong>Vencedor:</strong> ${match.winnerLabel}</span>
-      </div>
-      <div class="history-actions">
-        <button class="ghost-btn compact-btn" data-edit-match="${match.id}">Editar</button>
+      <div class="history-content">
+        <div class="history-topline">
+          <strong>${escapeHtml(match.mapName)}</strong>
+          <span>${recordedLabel}</span>
+        </div>
+        <div class="history-body">
+          <span><strong>Modo:</strong> ${drawModeLabel}</span>
+          <span><strong>CT:</strong> ${escapeHtml(match.ct.join(', '))}</span>
+          <span><strong>TR:</strong> ${escapeHtml(match.t.join(', '))}</span>
+          <span><strong>Vencedor:</strong> ${match.winnerLabel}</span>
+        </div>
+        <div class="history-actions">
+          <button class="ghost-btn compact-btn" data-edit-match="${match.id}">Editar</button>
+        </div>
       </div>
     </li>
   `;
@@ -867,17 +889,23 @@ function renderHistory() {
     .join('');
 }
 
-function renderRouletteAvatarCloud(pool, activeIndex = 0) {
-  rouletteAvatarCloud.innerHTML = pool.map((player, index) => {
+function getMapCardsHtml(pool, activeIndex = 0) {
+  return pool.map((player, index) => {
     const angle = (360 / pool.length) * index;
     const offset = Math.abs(index - activeIndex) % pool.length;
     const depthClass = offset === 0 ? 'is-focus' : offset <= 2 ? 'is-near' : '';
+    const map = getMapById(player.mapId || mapSelect.value);
     return `
-      <div class="roulette-avatar-node ${depthClass}" style="--angle:${angle}deg">
+      <div class="roulette-avatar-node map-node ${depthClass}" style="--angle:${angle}deg; background-image:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.66)), url('${map.image}')">
         <img src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
+        <span class="roulette-map-chip">${map.name}</span>
       </div>
     `;
   }).join('');
+}
+
+function renderRouletteAvatarCloud(pool, activeIndex = 0) {
+  rouletteAvatarCloud.innerHTML = getMapCardsHtml(pool, activeIndex);
 }
 
 function clearRouletteAvatarCloud() {
@@ -975,10 +1003,11 @@ function getRevealPosition(team, index) {
 
 async function runTeamReveal(draw) {
   clearDropZone();
+  const revealMap = getMapById(mapSelect.value);
   const sequence = [];
   for (let i = 0; i < 5; i += 1) {
-    sequence.push({ ...draw.ctPlayers[i], team: 'ct', slot: i });
-    sequence.push({ ...draw.tPlayers[i], team: 't', slot: i });
+    sequence.push({ ...draw.ctPlayers[i], team: 'ct', slot: i, mapId: revealMap.id });
+    sequence.push({ ...draw.tPlayers[i], team: 't', slot: i, mapId: revealMap.id });
   }
 
   for (let index = 0; index < sequence.length; index += 1) {
@@ -989,6 +1018,7 @@ async function runTeamReveal(draw) {
     card.style.left = pos.left;
     card.style.top = pos.top;
     card.style.setProperty('--stack-offset', `${player.slot * 6}px`);
+    card.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.82)), url('${revealMap.image}')`;
     card.innerHTML = `
       <img src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
       <div class="drop-card-meta">
@@ -1024,25 +1054,27 @@ async function drawTeams(mode = 'balanced') {
   rerollBtn.disabled = true;
   startMatchBtn.disabled = true;
 
+  const selectedMap = getMapById(mapSelect.value);
   const pool = players.map((name) => ({
     name,
     skill: getPlayerSkill(name),
-    avatar: getPlayerAvatar(name)
+    avatar: getPlayerAvatar(name),
+    mapId: selectedMap.id
   }));
 
-  await runDrawAnimation(pool, mode === 'balanced' ? 'BALANCEADO' : 'NORMAL');
+  await runDrawAnimation(pool, mode === 'balanced' ? selectedMap.name.toUpperCase() : `${selectedMap.name.toUpperCase()} • NORMAL`);
 
   currentDraw = mode === 'balanced' ? buildBalancedTeams(pool) : buildRandomTeams(pool);
   await runTeamReveal(currentDraw);
   renderTeams(currentDraw.ct, currentDraw.t);
-  rouletteNames.textContent = mode === 'balanced' ? 'REVEAL BALANCEADO FINALIZADO' : 'REVEAL NORMAL FINALIZADO';
+  rouletteNames.textContent = mode === 'balanced' ? `${selectedMap.name.toUpperCase()} • REVEAL BALANCEADO` : `${selectedMap.name.toUpperCase()} • REVEAL NORMAL`;
 
   const ctAverage = calculateTeamAverage(currentDraw.ctPlayers);
   const tAverage = calculateTeamAverage(currentDraw.tPlayers);
   setSummary(
     mode === 'balanced'
-      ? `Sorteio balanceado finalizado. CT média ${ctAverage} / TR média ${tAverage}.`
-      : `Sorteio normal finalizado. CT média ${ctAverage} / TR média ${tAverage}.`
+      ? `Sorteio balanceado finalizado em ${selectedMap.name}. CT média ${ctAverage} / TR média ${tAverage}.`
+      : `Sorteio normal finalizado em ${selectedMap.name}. CT média ${ctAverage} / TR média ${tAverage}.`
   );
 
   updateStatus('Times prontos');
@@ -1170,7 +1202,7 @@ function openEditModal(matchId) {
   const match = state.history.find((item) => item.id === matchId);
   if (!match) return;
   editingMatchId = match.id;
-  editMapSelect.value = match.mapId;
+  editMapSelect.value = MAPS.some((map) => map.id === match.mapId) ? match.mapId : MAPS[0].id;
   editWinnerSelect.value = match.winnerLabel;
   editCtPlayers.value = match.ct.join('\n');
   editTPlayers.value = match.t.join('\n');
@@ -1248,7 +1280,7 @@ function bindEvents() {
   startMatchBtn.addEventListener('click', startMatch);
   ctWinBtn.addEventListener('click', () => finishMatch('CT'));
   tWinBtn.addEventListener('click', () => finishMatch('TR'));
-  resetHistoryBtn.addEventListener('click', resetAllData);
+  resetHistoryBtn?.addEventListener('click', resetAllData);
   nextMapBtn.addEventListener('click', goToNextMap);
   randomMapBtn.addEventListener('click', animateRandomMap);
   mapSelect.addEventListener('change', updateMapBanner);
@@ -1302,6 +1334,8 @@ function bootstrap() {
   renderTeams([], []);
   renderRanking();
   renderHistory();
+  updateAdminUiVisibility();
+  renderMapRouletteCards(MAPS[0].id);
   clearRouletteAvatarCloud();
   clearDropZone();
   setSummary('Cadastre os jogadores, monte o lobby e sorteie os times.');
