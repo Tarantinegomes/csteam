@@ -2482,3 +2482,31 @@ body::after {
     opacity: .08;
   }
 }
+
+.hero-super-panel .hero-brand-bg {
+  justify-content: flex-end;
+  align-items: stretch;
+  inset: 0;
+  padding: 18px 26px 18px 52%;
+}
+
+.hero-super-panel .hero-brand-bg-image {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: contain;
+  object-position: center right;
+  opacity: .12;
+  transform: none;
+}
+
+@media (max-width: 720px) {
+  .hero-super-panel .hero-brand-bg {
+    padding: 12px 12px 12px 44%;
+  }
+
+  .hero-super-panel .hero-brand-bg-image {
+    object-position: center;
+    opacity: .08;
+  }
+}
