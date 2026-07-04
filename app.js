@@ -56,6 +56,7 @@ const teamA = document.getElementById('teamA');
 const teamB = document.getElementById('teamB');
 const rouletteNames = document.getElementById('rouletteNames');
 const rouletteAvatarCloud = document.getElementById('rouletteAvatarCloud');
+const rouletteDropZone = document.getElementById('rouletteDropZone');
 const statusPill = document.getElementById('statusPill');
 const rankingList = document.getElementById('rankingList');
 const historyList = document.getElementById('historyList');
@@ -682,8 +683,8 @@ function renderTeams(ctNames, tNames) {
       return;
     }
 
-    list.innerHTML = names.map((name) => `
-      <li class="team-item">
+    list.innerHTML = names.map((name, index) => `
+      <li class="team-item reveal-card ${index < 5 ? 'revealed' : ''}">
         <div class="lobby-player-main">
           <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}" />
           <div class="db-player-meta">
@@ -758,6 +759,7 @@ function renderRanking() {
 
 function buildHistoryItem(match) {
   const recordedLabel = new Date(match.recordedAt).toLocaleString('pt-BR');
+  const drawModeLabel = match.drawMode === 'random' ? 'Normal' : 'Balanceado';
 
   return `
     <li class="history-item">
@@ -766,6 +768,7 @@ function buildHistoryItem(match) {
         <span>${recordedLabel}</span>
       </div>
       <div class="history-body">
+        <span><strong>Modo:</strong> ${drawModeLabel}</span>
         <span><strong>CT:</strong> ${escapeHtml(match.ct.join(', '))}</span>
         <span><strong>TR:</strong> ${escapeHtml(match.t.join(', '))}</span>
         <span><strong>Vencedor:</strong> ${match.winnerLabel}</span>
@@ -802,8 +805,18 @@ function renderRouletteAvatarCloud(pool, activeIndex = 0) {
   }).join('');
 }
 
+function clearRouletteAvatarCloud() {
+  rouletteAvatarCloud.innerHTML = '';
+  rouletteAvatarCloud.classList.remove('is-active');
+}
+
+function clearDropZone() {
+  rouletteDropZone.innerHTML = '';
+}
+
 async function runDrawAnimation(pool, modeLabel) {
   rouletteAvatarCloud.classList.add('is-active');
+  clearDropZone();
   let activeIndex = 0;
 
   for (let round = 0; round < 26; round += 1) {
@@ -815,11 +828,6 @@ async function runDrawAnimation(pool, modeLabel) {
   }
 
   renderRouletteAvatarCloud(pool, activeIndex);
-}
-
-function clearRouletteAvatarCloud() {
-  rouletteAvatarCloud.innerHTML = '';
-  rouletteAvatarCloud.classList.remove('is-active');
 }
 
 function buildBalancedTeams(pool) {
@@ -877,6 +885,32 @@ function buildRandomTeams(pool) {
   };
 }
 
+async function runTeamReveal(draw) {
+  clearDropZone();
+  const sequence = [
+    ...draw.ctPlayers.map((player) => ({ ...player, team: 'ct' })),
+    ...draw.tPlayers.map((player) => ({ ...player, team: 't' }))
+  ];
+
+  for (let index = 0; index < sequence.length; index += 1) {
+    const player = sequence[index];
+    const card = document.createElement('div');
+    card.className = `drop-card ${player.team}`;
+    card.innerHTML = `
+      <img src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
+      <div class="drop-card-meta">
+        <strong>${escapeHtml(player.name)}</strong>
+        <span>${player.team === 'ct' ? 'CT' : 'TR'} • ${player.skill.toLocaleString('pt-BR')} CS</span>
+      </div>
+    `;
+    card.style.setProperty('--delay', `${index * 60}ms`);
+    rouletteDropZone.appendChild(card);
+    requestAnimationFrame(() => card.classList.add('drop-in'));
+    rouletteNames.textContent = `${player.name} → ${player.team === 'ct' ? 'CT' : 'TR'}`;
+    await sleep(120);
+  }
+}
+
 async function drawTeams(mode = 'balanced') {
   if (players.length !== 10) {
     setSummary('O lobby precisa ter exatamente 10 jogadores para sortear os times.');
@@ -890,6 +924,7 @@ async function drawTeams(mode = 'balanced') {
   shuffleBtn.disabled = true;
   shuffleRandomBtn.disabled = true;
   rerollBtn.disabled = true;
+  startMatchBtn.disabled = true;
 
   const pool = players.map((name) => ({
     name,
@@ -900,10 +935,9 @@ async function drawTeams(mode = 'balanced') {
   await runDrawAnimation(pool, mode === 'balanced' ? 'BALANCEADO' : 'NORMAL');
 
   currentDraw = mode === 'balanced' ? buildBalancedTeams(pool) : buildRandomTeams(pool);
+  await runTeamReveal(currentDraw);
   renderTeams(currentDraw.ct, currentDraw.t);
-  rouletteNames.textContent = mode === 'balanced'
-    ? 'TIMES BALANCEADOS PRONTOS'
-    : 'TIMES NORMAIS PRONTOS';
+  rouletteNames.textContent = mode === 'balanced' ? 'REVEAL BALANCEADO FINALIZADO' : 'REVEAL NORMAL FINALIZADO';
 
   const ctAverage = calculateTeamAverage(currentDraw.ctPlayers);
   const tAverage = calculateTeamAverage(currentDraw.tPlayers);
@@ -917,6 +951,7 @@ async function drawTeams(mode = 'balanced') {
   shuffleBtn.disabled = false;
   shuffleRandomBtn.disabled = false;
   rerollBtn.disabled = false;
+  startMatchBtn.disabled = false;
   isRolling = false;
 }
 
@@ -997,6 +1032,8 @@ function clearLobby() {
   renderPlayers();
   renderTeams([], []);
   clearRouletteAvatarCloud();
+  clearDropZone();
+  startMatchBtn.disabled = false;
   updateStatus('Aguardando');
   rouletteNames.textContent = 'PRONTO';
   setSummary('Lobby limpo.');
@@ -1023,6 +1060,7 @@ function resetAllData() {
   renderHistory();
   renderRanking();
   clearRouletteAvatarCloud();
+  clearDropZone();
   updateStatus('Resetado');
   rouletteNames.textContent = 'PRONTO';
   setSummary('Todos os dados foram resetados.');
@@ -1165,6 +1203,7 @@ function bootstrap() {
   renderRanking();
   renderHistory();
   clearRouletteAvatarCloud();
+  clearDropZone();
   setSummary('Cadastre os jogadores, monte o lobby e sorteie os times.');
   updateStatus('Aguardando');
   bindEvents();
