@@ -37,6 +37,7 @@ const addPlayerBtn = document.getElementById('addPlayerBtn');
 const autoAssembleBtn = document.getElementById('autoAssembleBtn');
 const clearBtn = document.getElementById('clearBtn');
 const shuffleBtn = document.getElementById('shuffleBtn');
+const shuffleRandomBtn = document.getElementById('shuffleRandomBtn');
 const rerollBtn = document.getElementById('rerollBtn');
 const addAfterDrawBtn = document.getElementById('addAfterDrawBtn');
 const startMatchBtn = document.getElementById('startMatchBtn');
@@ -54,6 +55,7 @@ const playerCount = document.getElementById('playerCount');
 const teamA = document.getElementById('teamA');
 const teamB = document.getElementById('teamB');
 const rouletteNames = document.getElementById('rouletteNames');
+const rouletteAvatarCloud = document.getElementById('rouletteAvatarCloud');
 const statusPill = document.getElementById('statusPill');
 const rankingList = document.getElementById('rankingList');
 const historyList = document.getElementById('historyList');
@@ -86,6 +88,7 @@ let players = [];
 let isRolling = false;
 let isMapRolling = false;
 let currentDraw = null;
+let currentDrawMode = 'balanced';
 let currentMatch = null;
 let editingMatchId = null;
 let editingSkillPlayer = null;
@@ -786,19 +789,41 @@ function renderHistory() {
     .join('');
 }
 
-function startRouletteAnimation(pool) {
-  const sample = pool.map((player) => player.name);
-  let index = 0;
-  rouletteNames.textContent = 'SORTEANDO';
-  return setInterval(() => {
-    rouletteNames.textContent = sample.slice(index, index + 4).join(' • ') || sample.join(' • ');
-    index = (index + 1) % sample.length;
-  }, 120);
+function renderRouletteAvatarCloud(pool, activeIndex = 0) {
+  rouletteAvatarCloud.innerHTML = pool.map((player, index) => {
+    const angle = (360 / pool.length) * index;
+    const offset = Math.abs(index - activeIndex) % pool.length;
+    const depthClass = offset === 0 ? 'is-focus' : offset <= 2 ? 'is-near' : '';
+    return `
+      <div class="roulette-avatar-node ${depthClass}" style="--angle:${angle}deg">
+        <img src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
+      </div>
+    `;
+  }).join('');
 }
 
-function createBalancedTeams() {
-  const enriched = players.map((name) => ({ name, skill: getPlayerSkill(name) }));
-  const sorted = [...enriched].sort((a, b) => b.skill - a.skill);
+async function runDrawAnimation(pool, modeLabel) {
+  rouletteAvatarCloud.classList.add('is-active');
+  let activeIndex = 0;
+
+  for (let round = 0; round < 26; round += 1) {
+    activeIndex = Math.floor(Math.random() * pool.length);
+    const activePlayer = pool[activeIndex];
+    renderRouletteAvatarCloud(pool, activeIndex);
+    rouletteNames.textContent = `${modeLabel} • ${activePlayer.name}`;
+    await sleep(70 + round * 10);
+  }
+
+  renderRouletteAvatarCloud(pool, activeIndex);
+}
+
+function clearRouletteAvatarCloud() {
+  rouletteAvatarCloud.innerHTML = '';
+  rouletteAvatarCloud.classList.remove('is-active');
+}
+
+function buildBalancedTeams(pool) {
+  const sorted = [...pool].sort((a, b) => b.skill - a.skill);
   const ct = [];
   const t = [];
 
@@ -831,7 +856,28 @@ function createBalancedTeams() {
   };
 }
 
-async function drawTeams() {
+function shuffleArray(items) {
+  const array = [...items];
+  for (let i = array.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function buildRandomTeams(pool) {
+  const shuffled = shuffleArray(pool);
+  const ct = shuffled.slice(0, 5);
+  const t = shuffled.slice(5, 10);
+  return {
+    ct: ct.map((player) => player.name),
+    t: t.map((player) => player.name),
+    ctPlayers: ct,
+    tPlayers: t
+  };
+}
+
+async function drawTeams(mode = 'balanced') {
   if (players.length !== 10) {
     setSummary('O lobby precisa ter exatamente 10 jogadores para sortear os times.');
     return;
@@ -839,21 +885,37 @@ async function drawTeams() {
 
   if (isRolling) return;
   isRolling = true;
-  updateStatus('Sorteando');
+  currentDrawMode = mode;
+  updateStatus(mode === 'balanced' ? 'Sorteando balanceado' : 'Sorteando normal');
   shuffleBtn.disabled = true;
+  shuffleRandomBtn.disabled = true;
   rerollBtn.disabled = true;
 
-  const pool = players.map((name) => ({ name, skill: getPlayerSkill(name) }));
-  const animation = startRouletteAnimation(pool);
-  await sleep(1800);
-  clearInterval(animation);
+  const pool = players.map((name) => ({
+    name,
+    skill: getPlayerSkill(name),
+    avatar: getPlayerAvatar(name)
+  }));
 
-  currentDraw = createBalancedTeams();
+  await runDrawAnimation(pool, mode === 'balanced' ? 'BALANCEADO' : 'NORMAL');
+
+  currentDraw = mode === 'balanced' ? buildBalancedTeams(pool) : buildRandomTeams(pool);
   renderTeams(currentDraw.ct, currentDraw.t);
-  rouletteNames.textContent = `${currentDraw.ct.join(' • ')}  VS  ${currentDraw.t.join(' • ')}`;
-  setSummary(`Times sorteados em ${getMapById(mapSelect.value).name}. CT média ${calculateTeamAverage(currentDraw.ctPlayers)} / TR média ${calculateTeamAverage(currentDraw.tPlayers)}.`);
+  rouletteNames.textContent = mode === 'balanced'
+    ? 'TIMES BALANCEADOS PRONTOS'
+    : 'TIMES NORMAIS PRONTOS';
+
+  const ctAverage = calculateTeamAverage(currentDraw.ctPlayers);
+  const tAverage = calculateTeamAverage(currentDraw.tPlayers);
+  setSummary(
+    mode === 'balanced'
+      ? `Sorteio balanceado finalizado. CT média ${ctAverage} / TR média ${tAverage}.`
+      : `Sorteio normal finalizado. CT média ${ctAverage} / TR média ${tAverage}.`
+  );
+
   updateStatus('Times prontos');
   shuffleBtn.disabled = false;
+  shuffleRandomBtn.disabled = false;
   rerollBtn.disabled = false;
   isRolling = false;
 }
@@ -870,11 +932,12 @@ function startMatch() {
     mapName: getMapById(mapSelect.value).name,
     ct: [...currentDraw.ct],
     t: [...currentDraw.t],
+    drawMode: currentDrawMode,
     startedAt: new Date().toISOString()
   };
 
   updateStatus('Partida em andamento');
-  setSummary(`Partida iniciada em ${currentMatch.mapName}. Quando terminar, registre o vencedor.`);
+  setSummary(`Partida iniciada em ${currentMatch.mapName}. Sorteio usado: ${currentDrawMode === 'balanced' ? 'balanceado' : 'normal'}.`);
 }
 
 function finishMatch(winnerLabel) {
@@ -892,7 +955,7 @@ function finishMatch(winnerLabel) {
   state.history.push(finished);
   recomputeRankingFromHistory();
   saveState();
-  addAdminLog('partida', `${winnerLabel} venceu em ${finished.mapName}.`, { map: finished.mapName, winner: winnerLabel });
+  addAdminLog('partida', `${winnerLabel} venceu em ${finished.mapName}.`, { map: finished.mapName, winner: winnerLabel, drawMode: finished.drawMode });
   renderHistory();
   renderRanking();
   renderDatabasePlayers();
@@ -933,6 +996,7 @@ function clearLobby() {
   currentMatch = null;
   renderPlayers();
   renderTeams([], []);
+  clearRouletteAvatarCloud();
   updateStatus('Aguardando');
   rouletteNames.textContent = 'PRONTO';
   setSummary('Lobby limpo.');
@@ -958,6 +1022,7 @@ function resetAllData() {
   renderTeams([], []);
   renderHistory();
   renderRanking();
+  clearRouletteAvatarCloud();
   updateStatus('Resetado');
   rouletteNames.textContent = 'PRONTO';
   setSummary('Todos os dados foram resetados.');
@@ -1036,8 +1101,9 @@ function bindEvents() {
   addPlayerBtn.addEventListener('click', handleSteamRegister);
   autoAssembleBtn.addEventListener('click', autoAssembleLobby);
   clearBtn.addEventListener('click', clearLobby);
-  shuffleBtn.addEventListener('click', drawTeams);
-  rerollBtn.addEventListener('click', drawTeams);
+  shuffleBtn.addEventListener('click', () => drawTeams('balanced'));
+  shuffleRandomBtn.addEventListener('click', () => drawTeams('random'));
+  rerollBtn.addEventListener('click', () => drawTeams(currentDrawMode || 'balanced'));
   addAfterDrawBtn.addEventListener('click', () => {
     setSummary('Adicione manualmente mais jogadores ao lobby, se precisar refazer depois.');
   });
@@ -1098,6 +1164,7 @@ function bootstrap() {
   renderTeams([], []);
   renderRanking();
   renderHistory();
+  clearRouletteAvatarCloud();
   setSummary('Cadastre os jogadores, monte o lobby e sorteie os times.');
   updateStatus('Aguardando');
   bindEvents();

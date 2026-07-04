@@ -1045,3 +1045,105 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .skill-modal-grid {
   margin-top: 16px;
 }
+
+.roulette-avatar-cloud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+
+.roulette-avatar-cloud.is-active {
+  opacity: 1;
+}
+
+.roulette-avatar-node {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 74px;
+  height: 74px;
+  margin: -37px;
+  transform: rotate(var(--angle)) translateY(-118px) rotate(calc(var(--angle) * -1));
+  transition: transform .22s ease, opacity .22s ease, filter .22s ease;
+  opacity: .55;
+}
+
+.roulette-avatar-node img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 2px solid rgba(255,255,255,.14);
+  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+}
+
+.roulette-avatar-node.is-focus {
+  transform: rotate(var(--angle)) translateY(-148px) rotate(calc(var(--angle) * -1)) scale(1.18);
+  opacity: 1;
+  z-index: 3;
+}
+
+.roulette-avatar-node.is-focus img {
+  border-color: rgba(244,161,51,.85);
+  box-shadow: 0 0 0 6px rgba(244,161,51,.14), 0 18px 40px rgba(244,161,51,.18);
+}
+
+.roulette-avatar-node.is-near {
+  opacity: .82;
+  z-index: 2;
+}
+
+.roulette-orbit {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.orbit-a {
+  animation: spin 9s linear infinite;
+}
+
+.orbit-b {
+  width: 320px;
+  height: 320px;
+  border-color: rgba(244,161,51,.12);
+  animation: spinReverse 12s linear infinite;
+}
+
+.split-draw-actions {
+  align-items: stretch;
+}
+
+.random-draw-btn {
+  min-height: 54px;
+  background: rgba(103,200,255,.12);
+  border: 1px solid rgba(103,200,255,.24);
+  color: #d7f3ff;
+}
+
+@media (max-width: 720px) {
+  .roulette-avatar-node {
+    width: 56px;
+    height: 56px;
+    margin: -28px;
+    transform: rotate(var(--angle)) translateY(-92px) rotate(calc(var(--angle) * -1));
+  }
+
+  .roulette-avatar-node.is-focus {
+    transform: rotate(var(--angle)) translateY(-114px) rotate(calc(var(--angle) * -1)) scale(1.12);
+  }
+
+  .orbit-a {
+    width: 190px;
+    height: 190px;
+  }
+
+  .orbit-b {
+    width: 240px;
+    height: 240px;
+  }
+}
