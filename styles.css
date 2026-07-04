@@ -2421,3 +2421,64 @@ body::after {
     padding-top: 12px;
   }
 }
+
+.single-hero-brand-row {
+  align-items: center;
+}
+
+.compact-hero-texts .brand-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: .98;
+}
+
+.compact-hero-texts .brand-subtitle {
+  font-size: 1.05rem;
+  color: #d2dceb;
+}
+
+.hero-super-panel .brand-title + .brand-subtitle {
+  margin-top: 6px;
+}
+
+.hero-super-panel .hero-brand-bg {
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 26px;
+  padding-top: 8px;
+}
+
+.hero-super-panel .hero-brand-bg-image {
+  width: min(360px, 30vw);
+  max-width: 34%;
+  opacity: .10;
+  transform: translateY(4px);
+}
+
+.hero-super-panel .merged-hero-block {
+  padding-top: 8px;
+}
+
+.hero-super-panel .enhanced-register-card {
+  margin-top: 10px;
+}
+
+@media (max-width: 720px) {
+  .compact-hero-texts .brand-title {
+    font-size: 1.7rem;
+  }
+
+  .compact-hero-texts .brand-subtitle {
+    font-size: .95rem;
+  }
+
+  .hero-super-panel .hero-brand-bg {
+    justify-content: center;
+    padding-right: 0;
+  }
+
+  .hero-super-panel .hero-brand-bg-image {
+    width: 210px;
+    max-width: 62%;
+    opacity: .08;
+  }
+}
