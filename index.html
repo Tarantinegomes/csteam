@@ -63,16 +63,21 @@
     </section>
 
     <main class="compact-main-grid">
-      <section class="panel glass player-db-panel compact-panel">
-        <div class="panel-header compact-panel-header">
+      <section class="panel glass player-db-panel compact-panel is-collapsible" id="databasePanel">
+        <div class="panel-header compact-panel-header collapsible-panel-header">
           <div>
             <h2>Jogadores cadastrados</h2>
             <p class="panel-text">Esses jogadores entram no lobby e no rank.</p>
           </div>
-          <span class="small-pill" id="databaseCount">0 cadastrados</span>
+          <div class="panel-header-actions">
+            <span class="small-pill" id="databaseCount">0 cadastrados</span>
+            <button id="toggleDatabasePanelBtn" class="ghost-btn compact-btn collapse-toggle-btn" type="button" aria-expanded="true" aria-controls="databasePanelBody">Ocultar</button>
+          </div>
         </div>
-        <div class="name-list-wrap compact-list-wrap">
-          <ul id="databasePlayerList" class="name-list"></ul>
+        <div class="collapsible-panel-body" id="databasePanelBody">
+          <div class="name-list-wrap compact-list-wrap database-scroll-wrap">
+            <ul id="databasePlayerList" class="name-list"></ul>
+          </div>
         </div>
       </section>
 
