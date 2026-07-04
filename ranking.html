@@ -44,7 +44,7 @@
   </div>
 
   <script>
-    const STORAGE_KEYS = ['cs-dos-campeoes-local-data-v6', 'cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
+    const STORAGE_KEYS = ['cs-dos-campeoes-local-data-v7', 'cs-dos-campeoes-local-data-v6', 'cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
     const rankingList = document.getElementById('rankingList');
     const rankSyncStatus = document.getElementById('rankSyncStatus');
 
@@ -60,12 +60,13 @@
     }
 
     function getTierLabel(points) {
-      if (points >= 5000) return 'Global Elite';
-      if (points >= 3500) return 'Supremo';
-      if (points >= 2500) return 'Águia Lendária';
-      if (points >= 1500) return 'AK Brabíssimo';
-      if (points >= 500) return 'Guardião Mestre';
-      return 'Gold Nova';
+      if (points >= 10000) return 'Global Elite';
+      if (points >= 8000) return 'Supreme';
+      if (points >= 6500) return 'Legendary Eagle';
+      if (points >= 5000) return 'DMG';
+      if (points >= 3500) return 'Master Guardian';
+      if (points >= 2200) return 'Gold Nova';
+      return 'Silver';
     }
 
     function normalizeSkill(skill) {
@@ -87,13 +88,14 @@
       const map = {};
       (playersDatabase || []).forEach((entry) => {
         if (typeof entry === 'string') {
-          map[entry] = { skill: 0, avatar: 'logo.png' };
+          map[entry] = { skill: 0, avatar: 'logo.png', steamUrl: '' };
           return;
         }
         if (entry?.name) {
           map[entry.name] = {
             skill: normalizeSkill(entry.skill),
-            avatar: entry.avatar || 'logo.png'
+            avatar: entry.avatar || 'logo.png',
+            steamUrl: entry.steamUrl || ''
           };
         }
       });
@@ -103,7 +105,10 @@
     function renderRanking() {
       const state = loadState();
       const playerMap = getPlayerMap(state.playersDatabase);
-      const entries = Object.entries(state.ranking || {})
+      const databaseNames = (state.playersDatabase || []).map((entry) => typeof entry === 'string' ? entry : entry?.name).filter(Boolean);
+      const allNames = new Set([...databaseNames, ...Object.keys(state.ranking || {})]);
+      const entries = [...allNames]
+        .map((name) => [name, state.ranking?.[name] || { points: 0, wins: 0, losses: 0, matches: 0 }])
         .sort((a, b) => {
           if (b[1].points !== a[1].points) return b[1].points - a[1].points;
           if (b[1].wins !== a[1].wins) return b[1].wins - a[1].wins;
@@ -119,21 +124,22 @@
       rankingList.innerHTML = '';
       entries.forEach(([name, data], index) => {
         const pointsClass = data.points >= 0 ? 'rank-points positive' : 'rank-points negative';
-        const playerInfo = playerMap[name] || { skill: 0, avatar: 'logo.png' };
+        const playerInfo = playerMap[name] || { skill: 0, avatar: 'logo.png', steamUrl: '' };
+        const avatar = playerInfo.avatar || 'logo.png';
         const item = document.createElement('li');
-        item.className = 'ranking-item';
+        item.className = 'ranking-item ranking-item-rich';
         item.innerHTML = `
           <div class="rank-emblem"><span>#${index + 1}</span></div>
-          <div class="db-player-main">
-            <img class="player-avatar" src="${escapeHtml(playerInfo.avatar)}" alt="${escapeHtml(name)}">
-            <div class="db-player-meta">
+          <div class="rank-player-block">
+            <img class="rank-avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}">
+            <div class="rank-player-meta">
               <strong class="rank-name">${escapeHtml(name)}</strong>
-              <div class="rank-meta">${data.wins}V • ${data.losses}D • ${data.matches} partidas • ${playerInfo.skill.toLocaleString('pt-BR')} CS</div>
+              <div class="rank-tier">${getTierLabel(data.points)} · ${data.wins}V / ${data.losses}D</div>
             </div>
           </div>
           <div class="rank-right">
-            <div class="${pointsClass}">${data.points > 0 ? '+' : ''}${data.points}</div>
-            <div class="rank-tier">${getTierLabel(data.points)}</div>
+            <div class="${pointsClass}">${data.points}</div>
+            <div class="rank-meta">${data.matches} partidas</div>
           </div>
         `;
         rankingList.appendChild(item);

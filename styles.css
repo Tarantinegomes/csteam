@@ -968,3 +968,30 @@ button:disabled { opacity: .55; cursor: not-allowed; }
     grid-template-columns: 1fr;
   }
 }
+
+.rank-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.1);
+  flex-shrink: 0;
+}
+
+.rank-player-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rank-player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ranking-item-rich {
+  grid-template-columns: 60px minmax(0, 1fr) auto;
+}
