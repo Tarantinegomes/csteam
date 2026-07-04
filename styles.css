@@ -1,4 +1,4 @@
-﻿:root {
+?:root {
   --bg: #050608;
   --panel: rgba(9, 12, 16, 0.74);
   --panel-soft: rgba(255,255,255,.04);
@@ -1633,12 +1633,12 @@ select option:hover {
 }
 
 .shuffle-btn .btn-label::before {
-  content: 'â˜…';
+  content: '★';
   font-size: 1rem;
 }
 
 .random-draw-btn::after {
-  content: 'âŸ³';
+  content: '⟳';
   display: grid;
   place-items: center;
   font-size: 1rem;
@@ -1646,7 +1646,7 @@ select option:hover {
 }
 
 #rerollBtn::after {
-  content: 'â†»';
+  content: '↻';
   display: grid;
   place-items: center;
   font-size: 1rem;
@@ -1662,7 +1662,7 @@ select option:hover {
 }
 
 #startMatchBtn::after {
-  content: 'â–¶';
+  content: '▶';
   display: grid;
   place-items: center;
   font-size: .95rem;
