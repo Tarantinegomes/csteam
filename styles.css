@@ -1377,3 +1377,16 @@ button:disabled { opacity: .55; cursor: not-allowed; }
     width: min(170px, 42vw);
   }
 }
+
+select,
+option,
+optgroup {
+  background: #0b0f16;
+  color: #f8fafc;
+}
+
+select option:checked,
+select option:hover {
+  background: #16345f;
+  color: #ffffff;
+}
