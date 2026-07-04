@@ -23,6 +23,12 @@ const STEAM_FALLBACK_PROFILES = {
   }
 };
 
+const STEAM_XML_PROXIES = [
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  (url) => `https://cors.isomorphic-git.org/${url}`
+];
+
 const steamProfileInput = document.getElementById('steamProfileInput');
 const playerSkillInput = document.getElementById('playerSkillInput');
 const addPlayerBtn = document.getElementById('addPlayerBtn');
@@ -308,6 +314,58 @@ function parseSteamProfileUrl(url) {
   }
 }
 
+function getXmlTextContent(xmlDoc, tagName) {
+  return xmlDoc.querySelector(tagName)?.textContent?.trim() || '';
+}
+
+function parseSteamProfileXml(xmlText, fallbackUrl) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+  const errorNode = xmlDoc.querySelector('parsererror');
+  if (errorNode) {
+    throw new Error('Resposta inválida da Steam.');
+  }
+
+  const steamId64 = getXmlTextContent(xmlDoc, 'steamID64');
+  const personaName = getXmlTextContent(xmlDoc, 'steamID');
+  const avatar = getXmlTextContent(xmlDoc, 'avatarFull') || getXmlTextContent(xmlDoc, 'avatarMedium') || getXmlTextContent(xmlDoc, 'avatarIcon');
+  const profileUrl = getXmlTextContent(xmlDoc, 'customURL')
+    ? `https://steamcommunity.com/id/${getXmlTextContent(xmlDoc, 'customURL')}/`
+    : (steamId64 ? `https://steamcommunity.com/profiles/${steamId64}/` : fallbackUrl);
+
+  if (!steamId64 || !personaName) {
+    throw new Error('Perfil Steam sem dados públicos suficientes.');
+  }
+
+  return {
+    steamId64,
+    personaName,
+    avatar,
+    steamUrl: profileUrl
+  };
+}
+
+async function fetchSteamXmlThroughProxies(targetUrl) {
+  let lastError = null;
+
+  for (const buildProxyUrl of STEAM_XML_PROXIES) {
+    const proxyUrl = buildProxyUrl(targetUrl);
+    try {
+      const response = await fetch(proxyUrl, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const text = await response.text();
+      if (!text || text.includes('<title>Access Denied</title>')) {
+        throw new Error('Resposta vazia ou bloqueada.');
+      }
+      return text;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Falha ao consultar a Steam.');
+}
+
 async function fetchSteamProfile(profileUrl) {
   const parsed = parseSteamProfileUrl(profileUrl);
   if (!parsed) {
@@ -319,7 +377,13 @@ async function fetchSteamProfile(profileUrl) {
     return fallback;
   }
 
-  throw new Error('Carregamento automático indisponível no momento para este perfil.');
+  const xmlUrl = `${parsed.url}?xml=1`;
+  try {
+    const xmlText = await fetchSteamXmlThroughProxies(xmlUrl);
+    return parseSteamProfileXml(xmlText, parsed.url);
+  } catch (error) {
+    throw new Error('Não foi possível carregar esse perfil Steam agora. Se o perfil for privado, a Steam pode bloquear os dados.');
+  }
 }
 
 function setSteamPreview(data) {
@@ -466,20 +530,6 @@ function recomputeRankingFromHistory() {
   });
 }
 
-function buildPlayerTag(name) {
-  const skill = getPlayerSkill(name);
-  return `${name} [${skill}]`;
-}
-
-function parsePlayerTag(tag) {
-  const match = String(tag).match(/^(.*?)(?:\s*\[(\d+)\])?$/);
-  const rawName = normalizeName(match?.[1] || tag);
-  return {
-    name: rawName,
-    skill: getPlayerSkill(rawName)
-  };
-}
-
 function setSummary(text, type = '') {
   matchSummary.textContent = text;
   matchSummary.classList.remove('victory');
@@ -525,21 +575,18 @@ function renderPlayers() {
     return;
   }
 
-  playerList.innerHTML = players.map((name) => {
-    const skill = getPlayerSkill(name);
-    return `
-      <li class="name-item">
-        <div class="lobby-player-main">
-          <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}" />
-          <div class="db-player-meta">
-            <strong>${escapeHtml(name)}</strong>
-            <span class="db-skill">CSficação: ${skill.toLocaleString('pt-BR')}</span>
-          </div>
+  playerList.innerHTML = players.map((name) => `
+    <li class="name-item">
+      <div class="lobby-player-main">
+        <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}" />
+        <div class="db-player-meta">
+          <strong>${escapeHtml(name)}</strong>
+          <span class="db-skill">CSficação: ${getPlayerSkill(name).toLocaleString('pt-BR')}</span>
         </div>
-        <button class="remove-btn" data-remove-lobby="${escapeHtml(name)}">×</button>
-      </li>
-    `;
-  }).join('');
+      </div>
+      <button class="remove-btn" data-remove-lobby="${escapeHtml(name)}">×</button>
+    </li>
+  `).join('');
 }
 
 function calculateTeamAverage(team) {
@@ -636,8 +683,6 @@ function renderRanking() {
 
 function buildHistoryItem(match) {
   const recordedLabel = new Date(match.recordedAt).toLocaleString('pt-BR');
-  const winnerTeam = match.winnerLabel === 'CT' ? match.ct : match.t;
-  const loserTeam = match.winnerLabel === 'CT' ? match.t : match.ct;
 
   return `
     <li class="history-item">
