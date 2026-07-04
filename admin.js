@@ -3,6 +3,8 @@ const APP_STORAGE_KEY = 'cs-dos-campeoes-local-data-v7';
 const APP_LEGACY_KEYS = ['cs-dos-campeoes-local-data-v6', 'cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
 const ADMIN_SESSION_KEY = 'cs-dos-campeoes-admin-session';
 const MAX_LOGS = 250;
+const supabaseConfig = window.CSTEAM_SUPABASE || null;
+const supabaseClient = supabaseConfig?.client || null;
 
 const adminLoginPanel = document.getElementById('adminLoginPanel');
 const adminContent = document.getElementById('adminContent');
@@ -27,8 +29,35 @@ const resetDataMessage = document.getElementById('resetDataMessage');
 const adminLogList = document.getElementById('adminLogList');
 
 let adminState = loadAdminState();
-let appState = loadAppState();
+let appState = normalizeAppState(null);
 let activeAdmin = getActiveAdmin();
+
+function normalizeAdminState(raw) {
+  return {
+    admins: Array.isArray(raw?.admins) ? raw.admins : [],
+    logs: Array.isArray(raw?.logs) ? raw.logs : []
+  };
+}
+
+function normalizeAppState(raw) {
+  return {
+    playersDatabase: Array.isArray(raw?.playersDatabase) ? raw.playersDatabase : [],
+    ranking: raw?.ranking || {},
+    history: Array.isArray(raw?.history) ? raw.history : []
+  };
+}
+
+function hasData(raw) {
+  return !!(raw && (raw.playersDatabase?.length || raw.history?.length || Object.keys(raw.ranking || {}).length));
+}
+
+function readStorage(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch {
+    return null;
+  }
+}
 
 function loadAdminState() {
   try {
@@ -43,13 +72,6 @@ function loadAdminState() {
     saveAdminState(initial);
     return initial;
   }
-}
-
-function normalizeAdminState(raw) {
-  return {
-    admins: Array.isArray(raw?.admins) ? raw.admins : [],
-    logs: Array.isArray(raw?.logs) ? raw.logs : []
-  };
 }
 
 function ensureRootAdmin(target) {
@@ -70,44 +92,79 @@ function saveAdminState(state = adminState) {
   localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(state));
 }
 
-function loadAppState() {
+function saveAppCache(state = appState) {
+  localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(state));
+}
+
+async function loadRemoteAppState() {
+  if (!supabaseClient) return null;
+  const { data, error } = await supabaseClient
+    .from(supabaseConfig.stateTable)
+    .select('payload')
+    .eq('id', supabaseConfig.stateRowId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Falha ao carregar estado global.', error);
+    return null;
+  }
+
+  return normalizeAppState(data?.payload || null);
+}
+
+async function saveRemoteAppState() {
+  if (!supabaseClient) {
+    saveAppCache();
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from(supabaseConfig.stateTable)
+    .upsert({
+      id: supabaseConfig.stateRowId,
+      payload: appState,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Falha ao salvar estado global.', error);
+    throw error;
+  }
+
+  saveAppCache();
+}
+
+async function loadAppState() {
+  const remote = await loadRemoteAppState();
+  if (hasData(remote)) {
+    appState = normalizeAppState(remote);
+    saveAppCache();
+    return appState;
+  }
+
   const current = readStorage(APP_STORAGE_KEY);
-  if (hasData(current)) return normalizeAppState(current);
+  if (hasData(current)) {
+    appState = normalizeAppState(current);
+    try {
+      await saveRemoteAppState();
+    } catch {}
+    return appState;
+  }
 
   for (const key of APP_LEGACY_KEYS) {
     const legacy = readStorage(key);
     if (hasData(legacy)) {
-      const migrated = normalizeAppState(legacy);
-      saveAppState(migrated);
-      return migrated;
+      appState = normalizeAppState(legacy);
+      saveAppCache();
+      try {
+        await saveRemoteAppState();
+      } catch {}
+      return appState;
     }
   }
 
-  return normalizeAppState(null);
-}
-
-function hasData(raw) {
-  return !!(raw && (raw.playersDatabase?.length || raw.history?.length || Object.keys(raw.ranking || {}).length));
-}
-
-function normalizeAppState(raw) {
-  return {
-    playersDatabase: Array.isArray(raw?.playersDatabase) ? raw.playersDatabase : [],
-    ranking: raw?.ranking || {},
-    history: Array.isArray(raw?.history) ? raw.history : []
-  };
-}
-
-function saveAppState(state = appState) {
-  localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(state));
-}
-
-function readStorage(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key));
-  } catch {
-    return null;
-  }
+  appState = normalizeAppState(null);
+  return appState;
 }
 
 function setSession(admin) {
@@ -240,10 +297,7 @@ function renderLogs() {
       id: `match-${match.id}`,
       type: 'partida',
       message: `${match.winnerLabel} venceu em ${match.mapName || match.map || 'Mapa desconhecido'}`,
-      meta: {
-        ct: match.ct,
-        t: match.t
-      },
+      meta: { ct: match.ct, t: match.t },
       admin: null,
       createdAt: match.recordedAt || match.date || new Date().toISOString()
     }))
@@ -283,8 +337,8 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
-function refreshAdminView() {
-  appState = loadAppState();
+async function refreshAdminView() {
+  await loadAppState();
   adminState = loadAdminState();
   activeAdmin = getActiveAdmin();
 
@@ -300,7 +354,7 @@ function refreshAdminView() {
   renderLogs();
 }
 
-function handleLogin() {
+async function handleLogin() {
   const username = adminUsernameInput.value.trim();
   const password = adminPasswordInput.value;
 
@@ -315,10 +369,10 @@ function handleLogin() {
   clearMessage(adminLoginMessage);
   adminUsernameInput.value = '';
   adminPasswordInput.value = '';
-  refreshAdminView();
+  await refreshAdminView();
 }
 
-function handleCreateAdmin() {
+async function handleCreateAdmin() {
   clearMessage(createAdminMessage);
   const username = newAdminUsernameInput.value.trim();
   const password = newAdminPasswordInput.value;
@@ -347,48 +401,48 @@ function handleCreateAdmin() {
   newAdminUsernameInput.value = '';
   newAdminPasswordInput.value = '';
   showMessage(createAdminMessage, 'Administrador cadastrado com sucesso.', 'success');
-  refreshAdminView();
+  await refreshAdminView();
 }
 
-function removeAdmin(id) {
+async function removeAdmin(id) {
   const admin = adminState.admins.find((entry) => entry.id === id);
   if (!admin || admin.role === 'owner') return;
 
   adminState.admins = adminState.admins.filter((entry) => entry.id !== id);
   saveAdminState();
   addLog('admin', `Administrador ${admin.username} foi removido.`);
-  refreshAdminView();
+  await refreshAdminView();
 }
 
-function removePlayer(name) {
+async function removePlayer(name) {
   const target = appState.playersDatabase.find((player) => player.name === name);
   if (!target) return;
 
   appState.playersDatabase = appState.playersDatabase.filter((player) => player.name !== name);
-  saveAppState();
+  await saveRemoteAppState();
   addLog('jogador', `Jogador ${name} foi removido do cadastro.`);
-  refreshAdminView();
+  await refreshAdminView();
 }
 
-function resetAllData() {
+async function resetAllData() {
   const confirmed = window.confirm('Tem certeza que deseja resetar todos os dados do site? Essa ação remove jogadores, ranking e histórico.');
   if (!confirmed) return;
 
   appState = normalizeAppState(null);
-  saveAppState();
+  await saveRemoteAppState();
   addLog('reset', 'Todos os dados do site foram resetados.');
   showMessage(resetDataMessage, 'Dados resetados com sucesso.', 'success');
-  refreshAdminView();
+  await refreshAdminView();
 }
 
 adminLoginBtn?.addEventListener('click', handleLogin);
 adminPasswordInput?.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') handleLogin();
 });
-adminLogoutBtn?.addEventListener('click', () => {
+adminLogoutBtn?.addEventListener('click', async () => {
   addLog('logout', `Logout realizado por ${activeAdmin?.username || 'admin'}.`);
   setSession(null);
-  refreshAdminView();
+  await refreshAdminView();
 });
 createAdminBtn?.addEventListener('click', handleCreateAdmin);
 adminResetDataBtn?.addEventListener('click', resetAllData);

@@ -23,7 +23,7 @@
         <div class="brand-mark logo-mark"><img src="logo.png" alt="CS dos Campeões" class="brand-logo-image"></div>
         <div class="brand-texts">
           <strong class="brand-title">Ranking</strong>
-          <span class="brand-subtitle">Pontuação local da galera</span>
+          <span class="brand-subtitle">Pontuação global da galera</span>
         </div>
       </div>
       <div class="top-nav-actions compact-nav-actions">
@@ -35,7 +35,7 @@
       <div class="panel-header compact-panel-header">
         <div>
           <h2>Ranking geral</h2>
-          <p class="panel-text">Atualizado pelos dados salvos neste navegador.</p>
+          <p class="panel-text">Atualizado pelos dados globais sincronizados do Supabase.</p>
         </div>
         <span class="small-pill" id="rankSyncStatus">Sincronizando...</span>
       </div>
@@ -43,20 +43,53 @@
     </section>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <script>
     const STORAGE_KEYS = ['cs-dos-campeoes-local-data-v7', 'cs-dos-campeoes-local-data-v6', 'cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
     const rankingList = document.getElementById('rankingList');
     const rankSyncStatus = document.getElementById('rankSyncStatus');
+    const supabaseConfig = window.CSTEAM_SUPABASE || null;
+    const supabaseClient = supabaseConfig?.client || null;
 
-    function loadState() {
+    function normalizeState(raw) {
+      return {
+        playersDatabase: Array.isArray(raw?.playersDatabase) ? raw.playersDatabase : [],
+        ranking: raw?.ranking || {},
+        history: Array.isArray(raw?.history) ? raw.history : []
+      };
+    }
+
+    function hasData(raw) {
+      return !!(raw && (raw.playersDatabase?.length || raw.history?.length || Object.keys(raw.ranking || {}).length));
+    }
+
+    function loadLocalState() {
       for (const key of STORAGE_KEYS) {
         try {
           const parsed = JSON.parse(localStorage.getItem(key));
-          const hasData = parsed && (parsed.playersDatabase?.length || parsed.history?.length || Object.keys(parsed.ranking || {}).length);
-          if (hasData) return parsed;
+          if (hasData(parsed)) return normalizeState(parsed);
         } catch {}
       }
-      return { playersDatabase: [], ranking: {} };
+      return normalizeState(null);
+    }
+
+    async function loadState() {
+      if (!supabaseClient) return loadLocalState();
+      const { data, error } = await supabaseClient
+        .from(supabaseConfig.stateTable)
+        .select('payload')
+        .eq('id', supabaseConfig.stateRowId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Falha ao carregar ranking global.', error);
+        return loadLocalState();
+      }
+
+      const state = normalizeState(data?.payload || null);
+      localStorage.setItem(STORAGE_KEYS[0], JSON.stringify(state));
+      return state;
     }
 
     function getTierLabel(points) {
@@ -102,8 +135,8 @@
       return map;
     }
 
-    function renderRanking() {
-      const state = loadState();
+    async function renderRanking() {
+      const state = await loadState();
       const playerMap = getPlayerMap(state.playersDatabase);
       const databaseNames = (state.playersDatabase || []).map((entry) => typeof entry === 'string' ? entry : entry?.name).filter(Boolean);
       const allNames = new Set([...databaseNames, ...Object.keys(state.ranking || {})]);
@@ -149,8 +182,7 @@
     }
 
     renderRanking();
-    window.addEventListener('storage', renderRanking);
-    setInterval(renderRanking, 1500);
+    setInterval(renderRanking, 2500);
   </script>
 </body>
 </html>
