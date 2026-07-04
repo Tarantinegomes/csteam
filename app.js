@@ -20,14 +20,16 @@ const STEAM_FALLBACK_PROFILES = {
     personaName: 'TARANTINE',
     avatar: 'https://avatars.fastly.steamstatic.com/ae3624efee29ed79e60ee5643b93108c368dacc7_full.jpg',
     steamUrl: 'https://steamcommunity.com/id/TARANTINE/'
-  },
+  }
 };
 
 const STEAM_XML_PROXIES = [
-  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url) => `https://cors.isomorphic-git.org/${url}`
+  { name: 'AllOrigins', buildUrl: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
+  { name: 'CorsProxy', buildUrl: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}` },
+  { name: 'Isomorphic', buildUrl: (url) => `https://cors.isomorphic-git.org/${url}` }
 ];
+const STEAM_REQUEST_TIMEOUT = 8000;
+const STEAM_PROXY_RETRY_COUNT = 2;
 
 const steamProfileInput = document.getElementById('steamProfileInput');
 const playerSkillInput = document.getElementById('playerSkillInput');
@@ -341,25 +343,43 @@ function parseSteamProfileXml(xmlText, fallbackUrl) {
   };
 }
 
-async function fetchSteamXmlThroughProxies(targetUrl) {
-  let lastError = null;
+async function fetchWithTimeout(url, options = {}, timeout = STEAM_REQUEST_TIMEOUT) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
 
-  for (const buildProxyUrl of STEAM_XML_PROXIES) {
-    const proxyUrl = buildProxyUrl(targetUrl);
-    try {
-      const response = await fetch(proxyUrl, { cache: 'no-store' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const text = await response.text();
-      if (!text || text.includes('<title>Access Denied</title>')) {
-        throw new Error('Resposta vazia ou bloqueada.');
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Tempo limite excedido');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchSteamXmlThroughProxies(targetUrl) {
+  const errors = [];
+
+  for (const proxy of STEAM_XML_PROXIES) {
+    for (let attempt = 1; attempt <= STEAM_PROXY_RETRY_COUNT; attempt += 1) {
+      const proxyUrl = proxy.buildUrl(targetUrl);
+      try {
+        const response = await fetchWithTimeout(proxyUrl, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        if (!text || text.includes('<title>Access Denied</title>')) {
+          throw new Error('Resposta vazia ou bloqueada');
+        }
+        return text;
+      } catch (error) {
+        errors.push(`${proxy.name} tentativa ${attempt}: ${error.message}`);
       }
-      return text;
-    } catch (error) {
-      lastError = error;
     }
   }
 
-  throw lastError || new Error('Falha ao consultar a Steam.');
+  throw new Error(errors.join(' | ') || 'Falha ao consultar a Steam.');
 }
 
 async function fetchSteamProfile(profileUrl) {
@@ -377,16 +397,9 @@ async function fetchSteamProfile(profileUrl) {
   try {
     const xmlText = await fetchSteamXmlThroughProxies(xmlUrl);
     return parseSteamProfileXml(xmlText, parsed.url);
-  } catch {
-    if (parsed.type === 'profiles') {
-      return {
-        steamId64: parsed.value,
-        personaName: `Steam ${parsed.value.slice(-6)}`,
-        avatar: 'logo.png',
-        steamUrl: parsed.url
-      };
-    }
-    throw new Error('Não foi possível carregar esse perfil Steam agora. Se o perfil for privado, a Steam pode bloquear os dados.');
+  } catch (error) {
+    console.error('Falha ao carregar perfil Steam', parsed.url, error);
+    throw new Error('Não foi possível carregar esse perfil Steam agora. Tente novamente em alguns segundos.');
   }
 }
 
@@ -941,6 +954,7 @@ async function handleSteamRegister() {
 
   addPlayerBtn.disabled = true;
   addPlayerBtn.textContent = 'Carregando...';
+  setSummary('Carregando dados públicos da Steam...');
   setSteamPreview({ personaName: 'Carregando perfil Steam...', avatar: 'logo.png', steamUrl: '' });
 
   try {
