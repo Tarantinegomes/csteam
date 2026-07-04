@@ -9,6 +9,7 @@ const MAPS = [
     id: 'inferno',
     name: 'Inferno',
     image: 'maps/inferno.webp',
+    logo: 'maps/inferno.webp',
     background: 'maps/backgroundmaps/Cs2_inferno_remake.webp',
     description: 'Banana pegando fogo, retake sofrido e a clássica trocação no bomb A.'
   },
@@ -16,6 +17,7 @@ const MAPS = [
     id: 'mirage',
     name: 'Mirage',
     image: 'maps/mirage.webp',
+    logo: 'maps/mirage.webp',
     background: 'maps/backgroundmaps/De_mirage_cs2.webp',
     description: 'Janela aberta, split explosivo e duelo seco no meio o round inteiro.'
   },
@@ -23,6 +25,7 @@ const MAPS = [
     id: 'nuke',
     name: 'Nuke',
     image: 'maps/nuke.webp',
+    logo: 'maps/nuke.webp',
     background: 'maps/backgroundmaps/Cs2nuke.webp',
     description: 'Vertical, tático e perfeito para fake, vent dive e call torta.'
   },
@@ -30,6 +33,7 @@ const MAPS = [
     id: 'ancient',
     name: 'Ancient',
     image: 'maps/ancient.webp',
+    logo: 'maps/ancient.webp',
     background: 'maps/backgroundmaps/De_ancient_cs2.webp',
     description: 'Pedra, utilitária pesada e avanço pressionando caverna o tempo todo.'
   },
@@ -37,6 +41,7 @@ const MAPS = [
     id: 'anubis',
     name: 'Anubis',
     image: 'maps/anubis.webp',
+    logo: 'maps/anubis.webp',
     background: 'maps/backgroundmaps/Anubis1.webp',
     description: 'Água, entrada forte e rounds rápidos com muita pressão de mapa.'
   },
@@ -44,6 +49,7 @@ const MAPS = [
     id: 'dust2',
     name: 'Dust II',
     image: 'maps/dust2.webp',
+    logo: 'maps/dust2.webp',
     background: 'maps/backgroundmaps/Cs2_dust2.webp',
     description: 'O mapa mais clássico da rotação, com ego, pixel e bala cantando.'
   },
@@ -51,6 +57,7 @@ const MAPS = [
     id: 'overpass',
     name: 'Overpass',
     image: 'maps/overpass.webp',
+    logo: 'maps/overpass.webp',
     background: 'maps/backgroundmaps/Overpass_loading_screen.webp',
     description: 'Controle de mapa, banheiro brigado e clutch nas rotações longas.'
   }
@@ -269,14 +276,13 @@ function getMapById(id) {
 
 function applyMapTheme(map) {
   document.body.style.setProperty('--map-bg-image', `url('${map.background}')`);
-  document.body.style.setProperty('--map-logo-image', `url('${map.image}')`);
 }
 
 function updateMapBanner() {
   const map = getMapById(mapSelect.value);
   applyMapTheme(map);
-  mapBannerImage.style.backgroundImage = `linear-gradient(90deg, rgba(0,0,0,.60), rgba(0,0,0,.18)), url('${map.background}')`;
-  mapBannerImage.style.setProperty('--map-banner-logo', `url('${map.image}')`);
+  mapBannerImage.style.backgroundImage = `linear-gradient(90deg, rgba(0,0,0,.62), rgba(0,0,0,.16)), url('${map.background}')`;
+  mapBannerImage.style.setProperty('--map-banner-logo', `url('${map.logo}')`);
   mapNameDisplay.textContent = map.name;
   mapDescription.textContent = map.description;
 }
@@ -353,7 +359,7 @@ function renderMapRouletteCards(activeMapId = '') {
     <div class="map-roulette-label">Sorteando mapa...</div>
     <div class="map-roulette-track">
       ${MAPS.map((map) => `
-        <div class="map-roulette-card ${map.id === activeMapId ? 'is-active' : ''}" style="background-image:linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.58)), url('${map.background}')">
+        <div class="map-roulette-card ${map.id === activeMapId ? 'is-active' : ''}" style="--card-map-logo:url('${map.logo}'); background-image:linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.58)), url('${map.background}')">
           <span>${map.name}</span>
         </div>
       `).join('')}
@@ -897,7 +903,7 @@ function buildHistoryItem(match) {
 
   return `
     <li class="history-item history-item-rich">
-      <div class="history-map-thumb" style="background-image:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.72)), url('${map.background}')">
+      <div class="history-map-thumb" style="--card-map-logo:url('${map.logo}'); background-image:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.72)), url('${map.background}')">
         <span>${map.name}</span>
       </div>
       <div class="history-content">
@@ -945,7 +951,7 @@ function getMapCardsHtml(pool, activeIndex = 0) {
     const depthClass = offset === 0 ? 'is-focus' : offset <= 2 ? 'is-near' : '';
     const map = getMapById(player.mapId || mapSelect.value);
     return `
-      <div class="roulette-avatar-node map-node ${depthClass}" style="--angle:${angle}deg; background-image:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.66)), url('${map.background}')">
+      <div class="roulette-avatar-node map-node ${depthClass}" style="--angle:${angle}deg; --card-map-logo:url('${map.logo}'); background-image:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.66)), url('${map.background}')">
         <img src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
         <span class="roulette-map-chip">${map.name}</span>
       </div>
@@ -1067,6 +1073,7 @@ async function runTeamReveal(draw) {
     card.style.left = pos.left;
     card.style.top = pos.top;
     card.style.setProperty('--stack-offset', `${player.slot * 6}px`);
+    card.style.setProperty('--card-map-logo', `url('${revealMap.logo}')`);
     card.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.84)), url('${revealMap.background}')`;
     card.innerHTML = `
       <img src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
