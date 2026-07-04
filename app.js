@@ -21,12 +21,6 @@ const STEAM_FALLBACK_PROFILES = {
     avatar: 'https://avatars.fastly.steamstatic.com/ae3624efee29ed79e60ee5643b93108c368dacc7_full.jpg',
     steamUrl: 'https://steamcommunity.com/id/TARANTINE/'
   },
-  'https://steamcommunity.com/profiles/76561198163057862/': {
-    steamId64: '76561198163057862',
-    personaName: 'Steam Player',
-    avatar: 'logo.png',
-    steamUrl: 'https://steamcommunity.com/profiles/76561198163057862/'
-  }
 };
 
 const STEAM_XML_PROXIES = [
