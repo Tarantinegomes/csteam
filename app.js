@@ -1,4 +1,6 @@
 const STORAGE_KEY = 'cs-dos-campeoes-local-data-v7';
+const ADMIN_STORAGE_KEY = 'cs-dos-campeoes-admin-v1';
+const ADMIN_SESSION_KEY = 'cs-dos-campeoes-admin-session';
 const LEGACY_STORAGE_KEYS = ['cs-dos-campeoes-local-data-v6', 'cs-dos-campeoes-local-data-v5', 'cs-dos-campeoes-local-data-v4'];
 const MATCH_POINTS = 500;
 
@@ -76,6 +78,51 @@ let editingMatchId = null;
 let steamPreviewData = null;
 let state = loadState();
 
+function loadAdminState() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ADMIN_STORAGE_KEY));
+    return {
+      admins: Array.isArray(raw?.admins) ? raw.admins : [],
+      logs: Array.isArray(raw?.logs) ? raw.logs : []
+    };
+  } catch {
+    return { admins: [], logs: [] };
+  }
+}
+
+function saveAdminState(adminState) {
+  localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(adminState));
+}
+
+function getAdminSession() {
+  try {
+    return JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function isAdminLogged() {
+  const session = getAdminSession();
+  const adminState = loadAdminState();
+  return !!(session?.id && adminState.admins.some((admin) => admin.id === session.id));
+}
+
+function addAdminLog(type, message, meta = {}) {
+  const adminState = loadAdminState();
+  const session = getAdminSession();
+  adminState.logs.unshift({
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    type,
+    message,
+    meta,
+    admin: session?.username || null,
+    createdAt: new Date().toISOString()
+  });
+  adminState.logs = adminState.logs.slice(0, 250);
+  saveAdminState(adminState);
+}
+
 function loadState() {
   const current = readStorageKey(STORAGE_KEY);
   const hasCurrentData = current && (current.playersDatabase?.length || current.history?.length || Object.keys(current.ranking || {}).length);
@@ -107,9 +154,9 @@ function readStorageKey(key) {
 
 function normalizeStateShape(raw) {
   return {
-    playersDatabase: Array.isArray(raw.playersDatabase) ? raw.playersDatabase : [],
-    ranking: raw.ranking || {},
-    history: Array.isArray(raw.history) ? raw.history : []
+    playersDatabase: Array.isArray(raw?.playersDatabase) ? raw.playersDatabase : [],
+    ranking: raw?.ranking || {},
+    history: Array.isArray(raw?.history) ? raw.history : []
   };
 }
 
@@ -344,6 +391,7 @@ function addPlayerToDatabase(profile, skill = 0) {
     existing.steamId64 = profile.steamId64 || existing.steamId64 || '';
     ensurePlayersInRanking([normalizedName]);
     saveState();
+    addAdminLog('cadastro', `Perfil ${normalizedName} atualizado no cadastro.`, { player: normalizedName });
     return 'updated';
   }
 
@@ -357,10 +405,16 @@ function addPlayerToDatabase(profile, skill = 0) {
   state.playersDatabase.sort((a, b) => a.name.localeCompare(b.name));
   ensurePlayersInRanking([normalizedName]);
   saveState();
+  addAdminLog('cadastro', `Perfil ${normalizedName} cadastrado via Steam.`, { player: normalizedName });
   return 'created';
 }
 
 function removePlayerFromDatabase(name) {
+  if (!isAdminLogged()) {
+    setSummary('Apenas administradores podem remover jogadores cadastrados.');
+    return;
+  }
+
   const normalized = normalizeName(name);
   state.playersDatabase = state.playersDatabase.filter((player) => player.name.toLowerCase() !== normalized.toLowerCase());
   players = players.filter((player) => player.toLowerCase() !== normalized.toLowerCase());
@@ -369,6 +423,7 @@ function removePlayerFromDatabase(name) {
     currentDraw.t = currentDraw.t.filter((player) => player.toLowerCase() !== normalized.toLowerCase());
   }
   saveState();
+  addAdminLog('jogador', `${normalized} foi removido do cadastro principal.`, { player: normalized });
   renderDatabasePlayers();
   renderPlayers();
   renderTeams(currentDraw?.ct || [], currentDraw?.t || []);
@@ -409,347 +464,392 @@ function recomputeRankingFromHistory() {
     winners.forEach((name) => applyMatchResultToPlayer(name, true));
     losers.forEach((name) => applyMatchResultToPlayer(name, false));
   });
-
-  saveState();
 }
 
-function getTierLabel(points) {
-  if (points >= 5000) return 'Global Elite';
-  if (points >= 3500) return 'Supremo';
-  if (points >= 2500) return 'Águia Lendária';
-  if (points >= 1500) return 'AK Brabíssimo';
-  if (points >= 500) return 'Guardião Mestre';
-  return 'Gold Nova';
+function buildPlayerTag(name) {
+  const skill = getPlayerSkill(name);
+  return `${name} [${skill}]`;
 }
 
-function setSummary(text, isVictory = false) {
+function parsePlayerTag(tag) {
+  const match = String(tag).match(/^(.*?)(?:\s*\[(\d+)\])?$/);
+  const rawName = normalizeName(match?.[1] || tag);
+  return {
+    name: rawName,
+    skill: getPlayerSkill(rawName)
+  };
+}
+
+function setSummary(text, type = '') {
   matchSummary.textContent = text;
-  matchSummary.classList.toggle('victory', isVictory);
+  matchSummary.classList.remove('victory');
+  if (type === 'victory') {
+    matchSummary.classList.add('victory');
+  }
 }
 
-function getAverageSkill(team) {
-  if (!team.length) return 0;
-  const total = team.reduce((sum, playerName) => sum + getPlayerSkill(playerName), 0);
-  return Math.round(total / team.length);
-}
-
-function updateBalanceDisplay() {
-  const ctAverage = currentDraw ? getAverageSkill(currentDraw.ct) : 0;
-  const tAverage = currentDraw ? getAverageSkill(currentDraw.t) : 0;
-  const diff = Math.abs(ctAverage - tAverage);
-  ctAverageDisplay.textContent = ctAverage.toLocaleString('pt-BR');
-  tAverageDisplay.textContent = tAverage.toLocaleString('pt-BR');
-  balanceDiffDisplay.textContent = diff.toLocaleString('pt-BR');
+function updateStatus(label) {
+  statusPill.textContent = label;
 }
 
 function renderDatabasePlayers() {
   databaseCount.textContent = `${state.playersDatabase.length} cadastrados`;
-  databasePlayerList.innerHTML = '';
-
   if (!state.playersDatabase.length) {
     databasePlayerList.innerHTML = '<li class="empty-state">Nenhum jogador cadastrado ainda.</li>';
     return;
   }
 
-  state.playersDatabase.forEach((player) => {
-    const inLobby = players.some((name) => name.toLowerCase() === player.name.toLowerCase());
-    const item = document.createElement('li');
-    item.className = 'name-item db-item';
-    item.innerHTML = `
+  const adminVisible = isAdminLogged();
+  databasePlayerList.innerHTML = state.playersDatabase.map((player) => `
+    <li class="name-item db-item">
       <div class="db-player-main">
-        <img class="player-avatar" src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}">
+        <img class="player-avatar" src="${escapeHtml(player.avatar || 'logo.png')}" alt="${escapeHtml(player.name)}" />
         <div class="db-player-meta">
           <strong>${escapeHtml(player.name)}</strong>
-          <small class="db-skill">CSficação: ${formatSkill(player.skill)}</small>
+          <span class="db-skill">CSficação: ${normalizeSkill(player.skill).toLocaleString('pt-BR')}</span>
           ${getPlayerStatsHtml(player.name)}
         </div>
       </div>
       <div class="db-actions">
-        <button class="small-action add-db-btn" data-name="${escapeHtml(player.name)}" ${(inLobby || players.length >= 10) ? 'disabled' : ''}>+</button>
-        <button class="small-action remove-db-btn" data-name="${escapeHtml(player.name)}">×</button>
+        <button class="small-action add-db-btn" data-add-db="${escapeHtml(player.name)}">+</button>
+        ${adminVisible ? `<button class="small-action remove-db-btn" data-remove-db="${escapeHtml(player.name)}">×</button>` : ''}
       </div>
-    `;
-    databasePlayerList.appendChild(item);
-  });
+    </li>
+  `).join('');
 }
 
 function renderPlayers() {
   playerCount.textContent = `${players.length} / 10`;
-  playerList.innerHTML = '';
-
   if (!players.length) {
     playerList.innerHTML = '<li class="empty-state">Nenhum jogador no lobby ainda.</li>';
-  }
-
-  players.forEach((name, index) => {
-    const item = document.createElement('li');
-    item.className = 'name-item';
-    item.innerHTML = `
-      <div class="lobby-player-main">
-        <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}">
-        <div class="db-player-meta">
-          <strong>${index + 1}. ${escapeHtml(name)}</strong>
-          <small class="db-skill">CSficação: ${formatSkill(getPlayerSkill(name))}</small>
-        </div>
-      </div>
-      <button class="remove-btn" data-index="${index}" aria-label="Remover ${escapeHtml(name)}">×</button>
-    `;
-    playerList.appendChild(item);
-  });
-
-  renderDatabasePlayers();
-  updateBalanceDisplay();
-}
-
-function renderTeams(ct, t) {
-  teamA.innerHTML = '';
-  teamB.innerHTML = '';
-
-  if (!ct.length && !t.length) {
-    teamA.innerHTML = '<li class="empty-state">Time CT vazio.</li>';
-    teamB.innerHTML = '<li class="empty-state">Time TR vazio.</li>';
-    updateBalanceDisplay();
     return;
   }
 
-  ct.forEach((name) => {
-    const item = document.createElement('li');
-    item.className = 'team-item';
-    item.innerHTML = `
-      <div class="lobby-player-main">
-        <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}">
-        <div class="db-player-meta">
-          <strong>${escapeHtml(name)}</strong>
-          <small class="db-skill">CSficação: ${formatSkill(getPlayerSkill(name))}</small>
+  playerList.innerHTML = players.map((name) => {
+    const skill = getPlayerSkill(name);
+    return `
+      <li class="name-item">
+        <div class="lobby-player-main">
+          <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}" />
+          <div class="db-player-meta">
+            <strong>${escapeHtml(name)}</strong>
+            <span class="db-skill">CSficação: ${skill.toLocaleString('pt-BR')}</span>
+          </div>
         </div>
-      </div>
+        <button class="remove-btn" data-remove-lobby="${escapeHtml(name)}">×</button>
+      </li>
     `;
-    teamA.appendChild(item);
-  });
+  }).join('');
+}
 
-  t.forEach((name) => {
-    const item = document.createElement('li');
-    item.className = 'team-item';
-    item.innerHTML = `
-      <div class="lobby-player-main">
-        <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}">
-        <div class="db-player-meta">
-          <strong>${escapeHtml(name)}</strong>
-          <small class="db-skill">CSficação: ${formatSkill(getPlayerSkill(name))}</small>
+function calculateTeamAverage(team) {
+  if (!team.length) return 0;
+  const total = team.reduce((sum, player) => sum + player.skill, 0);
+  return Math.round(total / team.length);
+}
+
+function updateBalanceDisplays(ctTeam, tTeam) {
+  const ctAvg = calculateTeamAverage(ctTeam);
+  const tAvg = calculateTeamAverage(tTeam);
+  ctAverageDisplay.textContent = ctAvg.toLocaleString('pt-BR');
+  tAverageDisplay.textContent = tAvg.toLocaleString('pt-BR');
+  balanceDiffDisplay.textContent = Math.abs(ctAvg - tAvg).toLocaleString('pt-BR');
+}
+
+function renderTeams(ctNames, tNames) {
+  const renderTeam = (list, names) => {
+    if (!names.length) {
+      list.innerHTML = '<li class="empty-state">Ainda sem jogadores.</li>';
+      return;
+    }
+
+    list.innerHTML = names.map((name) => `
+      <li class="team-item">
+        <div class="lobby-player-main">
+          <img class="lobby-avatar" src="${escapeHtml(getPlayerAvatar(name))}" alt="${escapeHtml(name)}" />
+          <div class="db-player-meta">
+            <strong>${escapeHtml(name)}</strong>
+            <span class="db-skill">CSficação: ${getPlayerSkill(name).toLocaleString('pt-BR')}</span>
+          </div>
         </div>
-      </div>
-    `;
-    teamB.appendChild(item);
-  });
+      </li>
+    `).join('');
+  };
 
-  updateBalanceDisplay();
+  renderTeam(teamA, ctNames);
+  renderTeam(teamB, tNames);
+
+  const ctSkillTeam = ctNames.map((name) => ({ name, skill: getPlayerSkill(name) }));
+  const tSkillTeam = tNames.map((name) => ({ name, skill: getPlayerSkill(name) }));
+  updateBalanceDisplays(ctSkillTeam, tSkillTeam);
+}
+
+function getSortedRankingEntries() {
+  const names = new Set([
+    ...state.playersDatabase.map((player) => player.name),
+    ...Object.keys(state.ranking || {})
+  ]);
+
+  ensurePlayersInRanking([...names]);
+
+  return [...names].map((name) => ({
+    name,
+    ...state.ranking[name]
+  })).sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function getRankTier(points) {
+  if (points >= 10000) return 'Global Elite';
+  if (points >= 8000) return 'Supreme';
+  if (points >= 6500) return 'Legendary Eagle';
+  if (points >= 5000) return 'DMG';
+  if (points >= 3500) return 'Master Guardian';
+  if (points >= 2200) return 'Gold Nova';
+  return 'Silver';
 }
 
 function renderRanking() {
-  rankingList.innerHTML = '';
-  const entries = Object.entries(state.ranking || {}).sort((a, b) => {
-    if (b[1].points !== a[1].points) return b[1].points - a[1].points;
-    if (b[1].wins !== a[1].wins) return b[1].wins - a[1].wins;
-    return a[0].localeCompare(b[0]);
-  });
-
+  const entries = getSortedRankingEntries();
   if (!entries.length) {
-    rankingList.innerHTML = '<li class="empty-state">Ainda não existe ranking salvo.</li>';
+    rankingList.innerHTML = '<li class="empty-state">Nenhum jogador no ranking ainda.</li>';
     return;
   }
 
-  entries.forEach(([name, data], index) => {
-    const pointsClass = data.points >= 0 ? 'rank-points positive' : 'rank-points negative';
-    const item = document.createElement('li');
-    item.className = 'ranking-item';
-    item.innerHTML = `
-      <div class="rank-emblem"><span>#${index + 1}</span></div>
+  rankingList.innerHTML = entries.map((entry, index) => `
+    <li class="ranking-item">
+      <div class="rank-emblem">#${index + 1}</div>
       <div>
-        <div class="rank-name">${escapeHtml(name)}</div>
-        <div class="rank-meta">${data.wins}V • ${data.losses}D • ${data.matches} partidas</div>
+        <div class="rank-name">${escapeHtml(entry.name)}</div>
+        <div class="rank-tier">${getRankTier(entry.points)} · ${entry.wins}V / ${entry.losses}D</div>
       </div>
       <div class="rank-right">
-        <div class="${pointsClass}">${data.points > 0 ? '+' : ''}${data.points}</div>
-        <div class="rank-tier">${getTierLabel(data.points)}</div>
+        <div class="rank-points">${entry.points.toLocaleString('pt-BR')}</div>
+        <div class="rank-meta">${entry.matches} partidas</div>
       </div>
-    `;
-    rankingList.appendChild(item);
-  });
+    </li>
+  `).join('');
+}
+
+function buildHistoryItem(match) {
+  const recordedLabel = new Date(match.recordedAt).toLocaleString('pt-BR');
+  const winnerTeam = match.winnerLabel === 'CT' ? match.ct : match.t;
+  const loserTeam = match.winnerLabel === 'CT' ? match.t : match.ct;
+
+  return `
+    <li class="history-item">
+      <div class="history-topline">
+        <strong>${escapeHtml(match.mapName)}</strong>
+        <span>${recordedLabel}</span>
+      </div>
+      <div class="history-body">
+        <span><strong>CT:</strong> ${escapeHtml(match.ct.join(', '))}</span>
+        <span><strong>TR:</strong> ${escapeHtml(match.t.join(', '))}</span>
+        <span><strong>Vencedor:</strong> ${match.winnerLabel}</span>
+      </div>
+      <div class="history-actions">
+        <button class="ghost-btn compact-btn" data-edit-match="${match.id}">Editar</button>
+      </div>
+    </li>
+  `;
 }
 
 function renderHistory() {
-  historyList.innerHTML = '';
-
   if (!state.history.length) {
     historyList.innerHTML = '<li class="empty-state">Nenhuma partida registrada ainda.</li>';
     return;
   }
 
-  [...state.history].reverse().forEach((match) => {
-    const item = document.createElement('li');
-    item.className = 'history-item';
-    item.innerHTML = `
-      <div class="history-header">
-        <strong>${escapeHtml(match.mapName)}</strong>
-        <span class="small-pill">${escapeHtml(match.winnerLabel)}</span>
-      </div>
-      <p class="panel-text">${escapeHtml(match.ct.join(', '))}</p>
-      <p class="panel-text">${escapeHtml(match.t.join(', '))}</p>
-      <div class="actions-row">
-        <button class="ghost-btn edit-history-btn" data-id="${escapeHtml(match.id)}">Editar</button>
-      </div>
-    `;
-    historyList.appendChild(item);
-  });
+  historyList.innerHTML = [...state.history]
+    .sort((a, b) => new Date(b.recordedAt) - new Date(a.recordedAt))
+    .map(buildHistoryItem)
+    .join('');
 }
 
-function addPlayerToLobby(name) {
-  if (players.length >= 10) {
-    setSummary('O lobby já está cheio.');
-    return;
-  }
-  if (players.some((player) => player.toLowerCase() === name.toLowerCase())) {
-    setSummary(`${name} já está no lobby.`);
-    return;
-  }
-  players.push(name);
-  renderPlayers();
+function startRouletteAnimation(pool) {
+  const sample = pool.map((player) => player.name);
+  let index = 0;
+  rouletteNames.textContent = 'SORTEANDO';
+  return setInterval(() => {
+    rouletteNames.textContent = sample.slice(index, index + 4).join(' • ') || sample.join(' • ');
+    index = (index + 1) % sample.length;
+  }, 120);
 }
 
-function removePlayerFromLobby(index) {
-  players.splice(index, 1);
-  renderPlayers();
-}
-
-function autoAssembleLobby() {
-  const available = state.playersDatabase
-    .map((player) => player.name)
-    .filter((name) => !players.some((current) => current.toLowerCase() === name.toLowerCase()));
-
-  while (players.length < 10 && available.length) {
-    const randomIndex = Math.floor(Math.random() * available.length);
-    players.push(available.splice(randomIndex, 1)[0]);
-  }
-
-  renderPlayers();
-}
-
-function shuffleArray(list) {
-  const copy = [...list];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-function buildBalancedTeams(list) {
-  const sorted = [...list].sort((a, b) => getPlayerSkill(b) - getPlayerSkill(a));
+function createBalancedTeams() {
+  const enriched = players.map((name) => ({ name, skill: getPlayerSkill(name) }));
+  const sorted = [...enriched].sort((a, b) => b.skill - a.skill);
   const ct = [];
   const t = [];
-  let ctScore = 0;
-  let tScore = 0;
 
-  sorted.forEach((player) => {
-    const playerSkill = getPlayerSkill(player);
+  sorted.forEach((player, index) => {
+    const ctAvg = calculateTeamAverage(ct);
+    const tAvg = calculateTeamAverage(t);
+
     if (ct.length >= 5) {
       t.push(player);
-      tScore += playerSkill;
       return;
     }
+
     if (t.length >= 5) {
       ct.push(player);
-      ctScore += playerSkill;
       return;
     }
-    if (ctScore <= tScore) {
-      ct.push(player);
-      ctScore += playerSkill;
+
+    if (index % 2 === 0) {
+      (ctAvg <= tAvg ? ct : t).push(player);
     } else {
-      t.push(player);
-      tScore += playerSkill;
+      (ctAvg > tAvg ? ct : t).push(player);
     }
   });
 
-  return { ct, t };
+  return {
+    ct: ct.map((player) => player.name),
+    t: t.map((player) => player.name),
+    ctPlayers: ct,
+    tPlayers: t
+  };
 }
 
-async function animateDraw() {
+async function drawTeams() {
   if (players.length !== 10) {
-    setSummary('O lobby precisa ter 10 jogadores para sortear os times.');
+    setSummary('O lobby precisa ter exatamente 10 jogadores para sortear os times.');
     return;
   }
-  if (isRolling) return;
 
+  if (isRolling) return;
   isRolling = true;
+  updateStatus('Sorteando');
   shuffleBtn.disabled = true;
   rerollBtn.disabled = true;
-  rouletteNames.textContent = 'SORTEANDO';
 
-  for (let i = 0; i < 16; i += 1) {
-    rouletteNames.textContent = shuffleArray(players).slice(0, 3).join(' • ');
-    await sleep(80 + i * 12);
-  }
+  const pool = players.map((name) => ({ name, skill: getPlayerSkill(name) }));
+  const animation = startRouletteAnimation(pool);
+  await sleep(1800);
+  clearInterval(animation);
 
-  currentDraw = buildBalancedTeams(players);
+  currentDraw = createBalancedTeams();
   renderTeams(currentDraw.ct, currentDraw.t);
-  rouletteNames.textContent = 'TIMES PRONTOS';
-  statusPill.textContent = 'Times sorteados';
-  setSummary('Times sorteados. Confira os dois lados e comece a partida.');
-
+  rouletteNames.textContent = `${currentDraw.ct.join(' • ')}  VS  ${currentDraw.t.join(' • ')}`;
+  setSummary(`Times sorteados em ${getMapById(mapSelect.value).name}. CT média ${calculateTeamAverage(currentDraw.ctPlayers)} / TR média ${calculateTeamAverage(currentDraw.tPlayers)}.`);
+  updateStatus('Times prontos');
   shuffleBtn.disabled = false;
   rerollBtn.disabled = false;
   isRolling = false;
 }
 
 function startMatch() {
-  if (!currentDraw || currentDraw.ct.length !== 5 || currentDraw.t.length !== 5) {
+  if (!currentDraw) {
     setSummary('Sorteie os times antes de começar a partida.');
     return;
   }
 
   currentMatch = {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     mapId: mapSelect.value,
     mapName: getMapById(mapSelect.value).name,
     ct: [...currentDraw.ct],
     t: [...currentDraw.t],
-    createdAt: new Date().toISOString(),
-    winnerLabel: ''
+    startedAt: new Date().toISOString()
   };
 
-  statusPill.textContent = 'Partida em andamento';
-  setSummary(`Partida iniciada em ${currentMatch.mapName}.`);
+  updateStatus('Partida em andamento');
+  setSummary(`Partida iniciada em ${currentMatch.mapName}. Quando terminar, registre o vencedor.`);
 }
 
-function finalizeMatch(winnerLabel) {
+function finishMatch(winnerLabel) {
   if (!currentMatch) {
     setSummary('Comece a partida antes de registrar o vencedor.');
     return;
   }
 
-  currentMatch.winnerLabel = winnerLabel;
-  state.history.push({ ...currentMatch });
+  const finished = {
+    ...currentMatch,
+    winnerLabel,
+    recordedAt: new Date().toISOString()
+  };
 
-  ensurePlayersInRanking([...currentMatch.ct, ...currentMatch.t]);
-  const winners = winnerLabel === 'CT' ? currentMatch.ct : currentMatch.t;
-  const losers = winnerLabel === 'CT' ? currentMatch.t : currentMatch.ct;
-  winners.forEach((name) => applyMatchResultToPlayer(name, true));
-  losers.forEach((name) => applyMatchResultToPlayer(name, false));
-
+  state.history.push(finished);
+  recomputeRankingFromHistory();
   saveState();
-  renderDatabasePlayers();
-  renderRanking();
+  addAdminLog('partida', `${winnerLabel} venceu em ${finished.mapName}.`, { map: finished.mapName, winner: winnerLabel });
   renderHistory();
-  statusPill.textContent = 'Partida finalizada';
-  setSummary(`${winnerLabel} venceu em ${currentMatch.mapName}. Ranking atualizado.`, true);
+  renderRanking();
+  renderDatabasePlayers();
   currentMatch = null;
+  updateStatus('Resultado salvo');
+  const winners = winnerLabel === 'CT' ? finished.ct.join(', ') : finished.t.join(', ');
+  setSummary(`${winnerLabel} venceu em ${finished.mapName}. Vencedores: ${winners}.`, 'victory');
+}
+
+function addPlayerToLobby(name) {
+  const normalized = normalizeName(name);
+  if (!normalized) return;
+  if (players.includes(normalized)) {
+    setSummary(`${normalized} já está no lobby.`);
+    return;
+  }
+  if (players.length >= 10) {
+    setSummary('O lobby já está completo com 10 jogadores.');
+    return;
+  }
+  players.push(normalized);
+  renderPlayers();
+}
+
+function autoAssembleLobby() {
+  if (state.playersDatabase.length < 10) {
+    setSummary('Você precisa ter pelo menos 10 jogadores cadastrados para auto montar o lobby.');
+    return;
+  }
+  players = state.playersDatabase.slice(0, 10).map((player) => player.name);
+  renderPlayers();
+  setSummary('Lobby montado automaticamente com os 10 primeiros jogadores cadastrados.');
+}
+
+function clearLobby() {
+  players = [];
+  currentDraw = null;
+  currentMatch = null;
+  renderPlayers();
+  renderTeams([], []);
+  updateStatus('Aguardando');
+  rouletteNames.textContent = 'PRONTO';
+  setSummary('Lobby limpo.');
+}
+
+function resetAllData() {
+  if (!isAdminLogged()) {
+    setSummary('Apenas administradores podem resetar os dados.');
+    return;
+  }
+
+  const confirmed = window.confirm('Tem certeza que deseja resetar todos os dados?');
+  if (!confirmed) return;
+
+  state = { playersDatabase: [], ranking: {}, history: [] };
+  players = [];
+  currentDraw = null;
+  currentMatch = null;
+  saveState();
+  addAdminLog('reset', 'Todos os dados do site foram resetados.');
+  renderDatabasePlayers();
+  renderPlayers();
+  renderTeams([], []);
+  renderHistory();
+  renderRanking();
+  updateStatus('Resetado');
+  rouletteNames.textContent = 'PRONTO';
+  setSummary('Todos os dados foram resetados.');
 }
 
 function openEditModal(matchId) {
-  const match = state.history.find((entry) => entry.id === matchId);
+  const match = state.history.find((item) => item.id === matchId);
   if (!match) return;
-  editingMatchId = matchId;
+  editingMatchId = match.id;
   editMapSelect.value = match.mapId;
   editWinnerSelect.value = match.winnerLabel;
   editCtPlayers.value = match.ct.join('\n');
@@ -758,169 +858,123 @@ function openEditModal(matchId) {
 }
 
 function closeEditModal() {
-  editModal.classList.add('hidden');
   editingMatchId = null;
+  editModal.classList.add('hidden');
 }
 
 function saveEditedMatch() {
-  const match = state.history.find((entry) => entry.id === editingMatchId);
-  if (!match) return;
+  if (!editingMatchId) return;
+  const target = state.history.find((item) => item.id === editingMatchId);
+  if (!target) return;
 
-  match.mapId = editMapSelect.value;
-  match.mapName = getMapById(editMapSelect.value).name;
-  match.winnerLabel = editWinnerSelect.value;
-  match.ct = editCtPlayers.value.split('\n').map((entry) => normalizeName(entry)).filter(Boolean);
-  match.t = editTPlayers.value.split('\n').map((entry) => normalizeName(entry)).filter(Boolean);
-
+  target.mapId = editMapSelect.value;
+  target.mapName = getMapById(editMapSelect.value).name;
+  target.winnerLabel = editWinnerSelect.value;
+  target.ct = editCtPlayers.value.split('\n').map(normalizeName).filter(Boolean);
+  target.t = editTPlayers.value.split('\n').map(normalizeName).filter(Boolean);
   recomputeRankingFromHistory();
-  renderDatabasePlayers();
-  renderRanking();
+  saveState();
+  addAdminLog('edicao', `Partida em ${target.mapName} foi editada.`, { matchId: target.id });
   renderHistory();
+  renderRanking();
+  renderDatabasePlayers();
   closeEditModal();
-  setSummary('Partida editada com sucesso.');
+  setSummary('Registro da partida atualizado.');
 }
 
-async function handleSteamLookupPreview() {
+async function handleSteamRegister() {
   const url = steamProfileInput.value.trim();
+  const skill = normalizeSkill(playerSkillInput.value);
   if (!url) {
-    setSteamPreview(null);
-    return;
-  }
-
-  steamPreview.classList.remove('hidden');
-  steamPreviewAvatar.src = 'logo.png';
-  steamPreviewName.textContent = 'Carregando perfil Steam...';
-  steamPreviewUrl.textContent = '';
-
-  try {
-    const profile = await fetchSteamProfile(url);
-    setSteamPreview({ ...profile, inputUrl: normalizeSteamUrl(url) });
-    setSummary(`Perfil carregado: ${profile.personaName}.`);
-  } catch (error) {
-    setSteamPreview(null);
-    setSummary(error.message || 'Não foi possível ler esse perfil Steam agora.');
-  }
-}
-
-async function handleAddPlayer() {
-  const steamUrl = steamProfileInput.value.trim();
-  const skill = playerSkillInput.value;
-
-  if (!steamUrl) {
     setSummary('Cole o link do perfil Steam antes de cadastrar.');
     return;
   }
 
   addPlayerBtn.disabled = true;
   addPlayerBtn.textContent = 'Carregando...';
-  setSummary('Buscando dados do perfil Steam...');
+  setSteamPreview({ personaName: 'Carregando perfil Steam...', avatar: 'logo.png', steamUrl: '' });
 
   try {
-    const normalizedInput = normalizeSteamUrl(steamUrl);
-    const profile = steamPreviewData && steamPreviewData.inputUrl === normalizedInput
-      ? steamPreviewData
-      : { ...(await fetchSteamProfile(steamUrl)), inputUrl: normalizedInput };
-
-    const result = addPlayerToDatabase(profile, skill);
+    const profile = await fetchSteamProfile(url);
+    setSteamPreview(profile);
+    const action = addPlayerToDatabase(profile, skill);
     renderDatabasePlayers();
     renderRanking();
-    setSteamPreview(profile);
-    steamProfileInput.value = profile.steamUrl;
+    steamProfileInput.value = '';
     playerSkillInput.value = '';
-
-    if (result === 'updated') {
-      setSummary(`${profile.personaName} já existia e foi atualizado.`);
-    } else {
-      setSummary(`${profile.personaName} foi cadastrado com sucesso.`);
-    }
+    setSummary(action === 'created'
+      ? `${profile.personaName} foi cadastrado com sucesso.`
+      : `${profile.personaName} já existia e foi atualizado.`);
   } catch (error) {
-    setSummary(error.message || 'Não foi possível cadastrar esse perfil Steam.');
+    setSteamPreview(null);
+    setSummary(error.message || 'Não foi possível carregar o perfil Steam.');
   } finally {
     addPlayerBtn.disabled = false;
     addPlayerBtn.textContent = 'Cadastrar';
   }
 }
 
-function resetAllData() {
-  if (!window.confirm('Tem certeza que deseja resetar todos os dados locais?')) return;
-  state = { playersDatabase: [], ranking: {}, history: [] };
-  players = [];
-  currentDraw = null;
-  currentMatch = null;
-  saveState();
-  renderEverything();
-  setSummary('Todos os dados locais foram resetados.');
-}
-
-function wireEvents() {
-  addPlayerBtn.addEventListener('click', handleAddPlayer);
-  steamProfileInput.addEventListener('change', handleSteamLookupPreview);
-  steamProfileInput.addEventListener('blur', handleSteamLookupPreview);
+function bindEvents() {
+  addPlayerBtn.addEventListener('click', handleSteamRegister);
   autoAssembleBtn.addEventListener('click', autoAssembleLobby);
-  clearBtn.addEventListener('click', () => {
-    players = [];
-    currentDraw = null;
-    renderPlayers();
-    renderTeams([], []);
-    setSummary('Lobby limpo.');
+  clearBtn.addEventListener('click', clearLobby);
+  shuffleBtn.addEventListener('click', drawTeams);
+  rerollBtn.addEventListener('click', drawTeams);
+  addAfterDrawBtn.addEventListener('click', () => {
+    setSummary('Adicione manualmente mais jogadores ao lobby, se precisar refazer depois.');
   });
-  shuffleBtn.addEventListener('click', animateDraw);
-  rerollBtn.addEventListener('click', animateDraw);
-  addAfterDrawBtn.addEventListener('click', () => setSummary('Adicione mais jogadores ao lobby antes do próximo sorteio.'));
   startMatchBtn.addEventListener('click', startMatch);
-  ctWinBtn.addEventListener('click', () => finalizeMatch('CT'));
-  tWinBtn.addEventListener('click', () => finalizeMatch('TR'));
+  ctWinBtn.addEventListener('click', () => finishMatch('CT'));
+  tWinBtn.addEventListener('click', () => finishMatch('TR'));
   resetHistoryBtn.addEventListener('click', resetAllData);
   nextMapBtn.addEventListener('click', goToNextMap);
   randomMapBtn.addEventListener('click', animateRandomMap);
   mapSelect.addEventListener('change', updateMapBanner);
   closeModalBtn.addEventListener('click', closeEditModal);
   saveEditBtn.addEventListener('click', saveEditedMatch);
-  editModal.addEventListener('click', (event) => {
-    if (event.target === editModal) closeEditModal();
-  });
 
   databasePlayerList.addEventListener('click', (event) => {
-    const addButton = event.target.closest('.add-db-btn');
+    const addButton = event.target.closest('[data-add-db]');
     if (addButton) {
-      addPlayerToLobby(addButton.dataset.name);
+      addPlayerToLobby(addButton.getAttribute('data-add-db'));
       return;
     }
 
-    const removeButton = event.target.closest('.remove-db-btn');
+    const removeButton = event.target.closest('[data-remove-db]');
     if (removeButton) {
-      removePlayerFromDatabase(removeButton.dataset.name);
+      const playerName = removeButton.getAttribute('data-remove-db');
+      const confirmed = window.confirm(`Remover ${playerName} dos jogadores cadastrados?`);
+      if (!confirmed) return;
+      removePlayerFromDatabase(playerName);
     }
   });
 
   playerList.addEventListener('click', (event) => {
-    const removeButton = event.target.closest('.remove-btn');
+    const removeButton = event.target.closest('[data-remove-lobby]');
     if (!removeButton) return;
-    removePlayerFromLobby(Number(removeButton.dataset.index));
+    const playerName = removeButton.getAttribute('data-remove-lobby');
+    players = players.filter((name) => name !== playerName);
+    renderPlayers();
   });
 
   historyList.addEventListener('click', (event) => {
-    const editButton = event.target.closest('.edit-history-btn');
+    const editButton = event.target.closest('[data-edit-match]');
     if (!editButton) return;
-    openEditModal(editButton.dataset.id);
-  });
-
-  window.addEventListener('storage', () => {
-    state = loadState();
-    renderEverything();
+    openEditModal(editButton.getAttribute('data-edit-match'));
   });
 }
 
-function renderEverything() {
+function bootstrap() {
   populateMapSelects();
+  recomputeRankingFromHistory();
   renderDatabasePlayers();
   renderPlayers();
-  renderTeams(currentDraw?.ct || [], currentDraw?.t || []);
+  renderTeams([], []);
   renderRanking();
   renderHistory();
-  updateBalanceDisplay();
+  setSummary('Cadastre os jogadores, monte o lobby e sorteie os times.');
+  updateStatus('Aguardando');
+  bindEvents();
 }
 
-wireEvents();
-renderEverything();
-setSummary('Cole o link do perfil Steam e cadastre a galera rapidamente.');
+bootstrap();

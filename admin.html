@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS dos Campeões — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="cs-video-shell">
+    <video class="cs-bg-video" autoplay muted loop playsinline>
+      <source src="cs2_header.webm" type="video/webm">
+    </video>
+    <div class="bg-overlay"></div>
+  </div>
+
+  <div class="app-shell app-shell-compact admin-shell">
+    <header class="top-nav glass compact-top-nav">
+      <div class="brand-lockup compact-brand">
+        <div class="brand-mark logo-mark"><img src="logo.png" alt="CS dos Campeões" class="brand-logo-image"></div>
+        <div class="brand-texts">
+          <strong class="brand-title">CS dos Campeões</strong>
+          <span class="brand-subtitle">Painel administrativo</span>
+        </div>
+      </div>
+      <div class="top-nav-actions compact-nav-actions">
+        <a href="index.html" class="nav-link">Voltar ao site</a>
+      </div>
+    </header>
+
+    <section class="panel glass admin-login-panel" id="adminLoginPanel">
+      <div class="panel-header compact-panel-header">
+        <div>
+          <h2>Entrar no painel</h2>
+          <p class="panel-text">Apenas administradores podem remover jogadores, resetar dados e gerenciar outros admins.</p>
+        </div>
+      </div>
+      <div class="admin-form-grid">
+        <div class="steam-input-stack">
+          <label for="adminUsernameInput">Login</label>
+          <input id="adminUsernameInput" type="text" placeholder="Seu login" autocomplete="username" />
+        </div>
+        <div class="steam-input-stack">
+          <label for="adminPasswordInput">Senha</label>
+          <input id="adminPasswordInput" type="password" placeholder="Sua senha" autocomplete="current-password" />
+        </div>
+        <button id="adminLoginBtn" class="primary-cta">Entrar</button>
+      </div>
+      <div class="admin-message" id="adminLoginMessage"></div>
+    </section>
+
+    <section class="admin-content hidden" id="adminContent">
+      <section class="panel glass admin-hero-panel">
+        <div class="panel-header compact-panel-header">
+          <div>
+            <h2>Painel principal</h2>
+            <p class="panel-text">Controle o que realmente impacta o rank e a saúde da base.</p>
+          </div>
+          <div class="admin-session-box">
+            <span class="small-pill" id="adminSessionBadge">Logado</span>
+            <button id="adminLogoutBtn" class="ghost-btn compact-btn">Sair</button>
+          </div>
+        </div>
+        <div class="admin-overview-grid">
+          <article class="glass-lite admin-stat-card">
+            <span>Total de admins</span>
+            <strong id="adminCountValue">0</strong>
+          </article>
+          <article class="glass-lite admin-stat-card">
+            <span>Jogadores cadastrados</span>
+            <strong id="adminPlayersValue">0</strong>
+          </article>
+          <article class="glass-lite admin-stat-card">
+            <span>Partidas registradas</span>
+            <strong id="adminMatchesValue">0</strong>
+          </article>
+          <article class="glass-lite admin-stat-card">
+            <span>Ações no log</span>
+            <strong id="adminLogsValue">0</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="admin-panels-grid">
+        <article class="panel glass admin-panel-block">
+          <div class="panel-header compact-panel-header">
+            <div>
+              <h2>Administradores</h2>
+              <p class="panel-text">Cadastre novos acessos administrativos.</p>
+            </div>
+          </div>
+          <div class="admin-form-grid admin-create-grid">
+            <div class="steam-input-stack">
+              <label for="newAdminUsernameInput">Novo login</label>
+              <input id="newAdminUsernameInput" type="text" placeholder="Ex: fulano" />
+            </div>
+            <div class="steam-input-stack">
+              <label for="newAdminPasswordInput">Nova senha</label>
+              <input id="newAdminPasswordInput" type="password" placeholder="Crie uma senha" />
+            </div>
+            <button id="createAdminBtn" class="primary-cta">Cadastrar admin</button>
+          </div>
+          <div class="admin-message" id="createAdminMessage"></div>
+          <div class="name-list-wrap compact-list-wrap admin-list-wrap">
+            <ul id="adminList" class="name-list"></ul>
+          </div>
+        </article>
+
+        <article class="panel glass admin-panel-block">
+          <div class="panel-header compact-panel-header">
+            <div>
+              <h2>Jogadores cadastrados</h2>
+              <p class="panel-text">Remoção protegida apenas para administradores.</p>
+            </div>
+          </div>
+          <div class="name-list-wrap compact-list-wrap admin-list-wrap">
+            <ul id="adminPlayerList" class="name-list"></ul>
+          </div>
+        </article>
+      </section>
+
+      <section class="admin-panels-grid single-admin-grid">
+        <article class="panel glass admin-panel-block">
+          <div class="panel-header compact-panel-header">
+            <div>
+              <h2>Controle de dados</h2>
+              <p class="panel-text">Use apenas quando realmente necessário para manter o rank justo.</p>
+            </div>
+          </div>
+          <div class="admin-actions-wrap">
+            <button id="adminResetDataBtn" class="control-btn admin-danger-btn">Resetar todos os dados</button>
+          </div>
+          <div class="admin-message" id="resetDataMessage"></div>
+        </article>
+      </section>
+
+      <section class="panel glass admin-panel-block">
+        <div class="panel-header compact-panel-header">
+          <div>
+            <h2>Logs do sistema</h2>
+            <p class="panel-text">Ações administrativas, partidas e mudanças importantes.</p>
+          </div>
+        </div>
+        <div class="name-list-wrap compact-list-wrap admin-log-wrap">
+          <ul id="adminLogList" class="history-list"></ul>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

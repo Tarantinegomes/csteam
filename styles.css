@@ -804,3 +804,167 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .name-item,
   .team-item { align-items: flex-start; }
 }
+
+.admin-shell {
+  max-width: 1180px;
+}
+
+.admin-content {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-login-panel,
+.admin-panel-block,
+.admin-hero-panel {
+  border-radius: 24px;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 16px;
+}
+
+.admin-create-grid {
+  margin-top: 0;
+}
+
+.admin-message {
+  margin-top: 12px;
+  min-height: 22px;
+  color: var(--muted);
+  font-size: .92rem;
+}
+
+.admin-message.success {
+  color: var(--success);
+}
+
+.admin-message.error {
+  color: var(--danger);
+}
+
+.admin-session-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-overview-grid,
+.admin-panels-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.single-admin-grid {
+  grid-template-columns: 1fr;
+}
+
+.admin-stat-card {
+  padding: 16px;
+  border-radius: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-stat-card span {
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+.admin-stat-card strong {
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+
+.admin-list-wrap,
+.admin-log-wrap {
+  min-height: 220px;
+}
+
+.admin-user-item,
+.admin-player-item,
+.admin-log-item {
+  min-height: 0;
+}
+
+.admin-avatar-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  color: #fff4e1;
+  background: linear-gradient(135deg, rgba(244,161,51,.34), rgba(255,255,255,.08));
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.admin-actions-wrap {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-danger-btn {
+  background: rgba(255,99,125,.14);
+  color: #ffd7df;
+  border: 1px solid rgba(255,99,125,.22);
+}
+
+.admin-log-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.admin-log-message {
+  font-weight: 700;
+}
+
+.admin-log-meta {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.history-topline,
+.history-body,
+.history-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.history-topline {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.history-body {
+  flex-direction: column;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.history-actions {
+  justify-content: flex-end;
+}
+
+@media (max-width: 1024px) {
+  .admin-form-grid,
+  .admin-overview-grid,
+  .admin-panels-grid {
+    grid-template-columns: 1fr;
+  }
+}
